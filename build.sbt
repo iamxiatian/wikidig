@@ -1,5 +1,5 @@
-name          := "wikimining"
-version       := "1.3.alpha"
+name          := "wiki-tools"
+version       := "0.1"
 scalaVersion  := "2.12.1"
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
@@ -36,17 +36,12 @@ libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.16.0"
 libraryDependencies += "com.github.pathikrit"  %% "better-files-akka"  % "3.0.0"
 
 //bing and mongodb driver
-//libraryDependencies += "org.mongodb" %% "casbah" % "3.1.1" //mongodb driver
 libraryDependencies += "com.github.etaty" %% "rediscala" % "1.8.0"
 libraryDependencies +=  "org.reactivemongo" %% "reactivemongo" % "0.12.3"
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2"
 
 //add jars for zhinang modules
-libraryDependencies += "commons-cli" % "commons-cli" % "1.2"
-libraryDependencies += "commons-codec" % "commons-codec" % "1.6"
-libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.3.1"
-libraryDependencies += "org.apache.commons" % "commons-math3" % "3.0"
 libraryDependencies += "com.google.guava" % "guava" % "18.0"
 
 //NLP libraries
@@ -66,7 +61,7 @@ resolvers ++= Seq(
 //native package
 import NativePackagerHelper._
 enablePlugins(JavaServerAppPackaging)
-mainClass in Compile := Some("wiki.Main")
+mainClass in Compile := Some("xiatian.wiki.Main")
 //把运行时需要的配置文件拷贝到打包后的主目录下
 
 mappings in Universal <++= (packageBin in Compile) map { _ =>

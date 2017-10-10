@@ -1,0 +1,161 @@
+* wikimining
+
+Wikipedia Mining. (Rewrite xesa and wikit project via Scala language)
+
+** Wiki Clickstream
+
+https://meta.wikimedia.org/wiki/Research:Wikipedia_clickstream
+
+https://figshare.com/articles/Wikipedia_Clickstream/1305770
+
+最新的Clickstream: 2017年1月
+
+https://s3-eu-west-1.amazonaws.com/pfigshare-u-files/7563832/2017_01_en_clickstream.tsv.gz
+
+我搜了一下bing学术搜索，没有发现和Wikipedia Clickstream相关的论文
+
+** Page view statistics for Wikimedia projects(Click Log)
+
+下载地址:
+   https://dumps.wikimedia.org/other/pageviews/
+
+格式说明：
+    https://dumps.wikimedia.org/other/pagecounts-raw/
+
+
+** 维基百科的相关数据
+
+Wikipedia每隔一段时间，就会在当前的维基百科数据，以压缩文件导出，其中，网站上把最新的维基
+百科数据导出，供人们使用。
+
+维基百科镜像数据的下载地址：
+
+https://dumps.wikimedia.org/mirrors.html
+
+例如，我们可以把SQL格式的维基页面数据通过以下链接下载：
+
+http://caesar.ftp.acc.umu.se/mirror/wikimedia.org/dumps/enwiki/20170601/enwiki-20170601-page.sql.gz
+
+中文：
+http://ftp.acc.umu.se/mirror/wikimedia.org/dumps/zhwiki/20170520/
+
+*** 维基页面数据 (Page)
+
+1) 下载维基页面数据
+    维基百科提供了XML、SQL等不同形式的导出数据，此处我们使用维基百科提供的SQL格式的数据，
+    下载地址：
+    
+    http://caesar.ftp.acc.umu.se/mirror/wikimedia.org/dumps/enwiki/20170601/enwiki-20170601-page.sql.gz
+
+    该文件大小大约1.5G
+    
+2) 维基页面的表结构，可参考网页：
+    https://www.mediawiki.org/wiki/Manual:Page_table
+
+    +--------------------+---------------------+------+-----+---------+----------------+
+    | Field              | Type                | Null | Key | Default | Extra          |
+    +--------------------+---------------------+------+-----+---------+----------------+
+    | page_id            | int(10) unsigned    | NO   | PRI | NULL    | AUTO_INCREMENT |
+    | page_namespace     | int(11)             | NO   | MUL | NULL    |                |
+    | page_title         | varchar(255) binary | NO   |     | NULL    |                |
+    | page_restrictions  | tinyblob            | NO   |     | NULL    |                |
+    | page_is_redirect   | tinyint(3) unsigned | NO   | MUL | 0       |                |
+    | page_is_new        | tinyint(3) unsigned | NO   |     | 0       |                |
+    | page_random        | real unsigned       | NO   | MUL | NULL    |                |
+    | page_touched       | binary(14)          | NO   |     | NULL    |                |
+    | page_links_updated | varbinary(14)       | YES  |     | NULL    |                |
+    | page_latest        | int(10) unsigned    | NO   |     | NULL    |                |
+    | page_len           | int(10) unsigned    | NO   | MUL | NULL    |                |
+    | page_content_model | varbinary(32)       | YES  |     | NULL    |                |
+    | page_lang          | varbinary(35)       | YES  |     | NULL    |                |
+    +--------------------+---------------------+------+-----+---------+----------------+
+
+该表中大约有3500万行记录，页面的类型有多种，其中我们更关心的是维基百科的文章页面，文如果表
+中的page_namespace字段的值为0，则表示文章。
+
+类别页面(Category page)用于表示页面之间的父子关系，通过page_namespace=14表示类别。
+
+
+*** 类别之间的链接(Categorylinks)
+
+1) 下载地址（2.1G）
+
+    http://ftp.acc.umu.se/mirror/wikimedia.org/dumps/enwiki/20170601/enwiki-20170601-categorylinks.sql.gz
+
+2) 表结构描述：
+
+    https://www.mediawiki.org/wiki/Manual:Categorylinks_table
+
+    +-------------------+------------------------------+------+---------+-------------------+-----------------------------+
+    | Field             | Type                         | Null | Key     | Default           | Extra                       |
+    +-------------------+------------------------------+------+---------+-------------------+-----------------------------+
+    | cl_from           | int(10) unsigned             | NO   | UNI/PRI | 0                 |                             |
+    | cl_to             | varchar(255) binary          | NO   | PRI     | NULL              |                             |
+    | cl_sortkey        | varbinary(230)               | NO   |         | NULL              |                             |
+    | cl_sortkey_prefix | varchar(255) binary          | NO   |         | NULL              |                             |
+    | cl_timestamp      | timestamp                    | NO   |         | CURRENT_TIMESTAMP | on update CURRENT_TIMESTAMP |
+    | cl_collation      | varbinary(32)                | NO   | MUL     | NULL              |                             |
+    | cl_type           | enum('page','subcat','file') | NO   |         | 'page'            |                             |
+    +-------------------+------------------------------+------+---------+-------------------+-----------------------------+
+
+    该表保存了文章到类别、类别与子类别之间链接关系。
+
+    cl_from: Stores the page.page_id of the article where the link was
+    placed.
+
+    cl_to: Stores the name (excluding namespace prefix) of the desired category.
+    Spaces are replaced by underscores (_)
+
+    cl_sortkey: Stores the title by which the page should be sorted in a category
+     list. This is the binary sortkey, that depending on $wgCategoryCollation
+     may or may not be readable by a human (but should sort in correct order
+     when comparing as a byte string)
+
+    cl_timestamp: Stores the time at which that link was last updated in the table.
+
+    cl_sortkey_prefix: This is either the empty string if a page is using the
+    default sortkey (aka the sortkey is unspecified). Otherwise it is the human
+    readable version of cl_sortkey. Needed mostly so that cl_sortkey can be
+    easily updated in certain situations without re-parsing the entire page.
+
+    cl_collation: What collation is in use. Used so that if the collation
+    changes, the updateCollation.php script knows what rows need to be fixed in db.
+
+    cl_type: What type of page is this (file, subcat (subcategory) or page
+    (normal page)). Used so that the different sections on a category page
+    can be paged independently in an efficient manner.
+
+
+
+*** 页面和类别之间的关系
+
+    下面我们看一下page和categorylinks两个表之间的关系。例如，我们要把所有出现在文章中的
+    类别，根据类别关系构建成一棵树。
+
+    1) 获取所有的文章/指定的文章进行观察
+
+    ```
+    select * from page where page_namespace = 0;
+    select * from page where page_namespace = 0 and page_title='Anarchism'
+    ```
+
+    执行第2条SQL，将返回Anarchism的信息，假设其页面的page_id = 12;
+
+    2) 查看分类信息
+
+    ```
+    select * from categorylinks where cl_from = 12
+    ```
+
+    返回Anarchism页面拥有的所有的分类信息，假设拥有有一个类别Political_culture，根据该
+    名称，我们可以进一步查询page表，获取其对应的page_id:
+
+    ```
+    select * from page where page_namespace = 14 and page_title='Political_culture'
+    ```
+
+    假设其page_id = 21722732，那么我们可以进一步获取该类别的父类别：
+
+    ```
+    select * from categorylinks where cl_from = 21722732
+    ```
