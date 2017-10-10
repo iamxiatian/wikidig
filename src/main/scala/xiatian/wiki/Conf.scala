@@ -1,14 +1,16 @@
-package wikimining
+package xiatian.wiki
+
+import java.io.File
 
 import com.typesafe.config.ConfigFactory
 
 /**
-  * System Settings
+  * System Settings configuration
   *
   * @author Tian Xia
   *         June 04, 2017 13:20
   */
-object Settings {
+object Conf {
   val version = "1.0"
 
   //先采用my.conf中的配置，再使用application.conf中的默认配置
@@ -23,6 +25,8 @@ object Settings {
   def getBoolean(path: String) = config.getBoolean(path)
 
   lazy val mongoUrl = getString("db.mongo.url")
+
+  val articleDbFile = new File("/opt/wiki/articles.db")
 
   def printConfig =
     s"""My configuration:

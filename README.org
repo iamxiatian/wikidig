@@ -1,6 +1,6 @@
-* wikimining
+* wiki-tools
 
-Wikipedia Mining. (Rewrite xesa and wikit project via Scala language)
+基于Scala的维基百科挖掘工具
 
 ** Wiki Clickstream
 

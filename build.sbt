@@ -1,13 +1,13 @@
-name          := "wiki-tools"
-version       := "0.1"
-scalaVersion  := "2.12.1"
+name := "wiki-tools"
+version := "0.1"
+scalaVersion := "2.12.1"
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
 //fork in run := true
 //cancelable in Global := true
 
 //akka
-libraryDependencies +="com.typesafe.akka" %% "akka-actor" % "2.5.0"
+libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.0"
 libraryDependencies += "com.typesafe.akka" %% "akka-remote" % "2.5.0"
 libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % "2.5.0"
 libraryDependencies += "com.typesafe.akka" %% "akka-http" % "10.0.5"
@@ -33,11 +33,12 @@ libraryDependencies += "com.github.scopt" %% "scopt" % "3.5.0"
 libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.16.0"
 
 //Scala better file
-libraryDependencies += "com.github.pathikrit"  %% "better-files-akka"  % "3.0.0"
+libraryDependencies += "com.github.pathikrit" %% "better-files-akka" % "3.0.0"
 
 //bing and mongodb driver
 libraryDependencies += "com.github.etaty" %% "rediscala" % "1.8.0"
-libraryDependencies +=  "org.reactivemongo" %% "reactivemongo" % "0.12.3"
+libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "0.12.3"
+libraryDependencies += "org.rocksdb" % "rocksdbjni" % "5.7.2"
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2"
 
@@ -59,26 +60,28 @@ resolvers ++= Seq(
 )
 
 //native package
-import NativePackagerHelper._
+
 enablePlugins(JavaServerAppPackaging)
 mainClass in Compile := Some("xiatian.wiki.Main")
 //把运行时需要的配置文件拷贝到打包后的主目录下
 
 mappings in Universal <++= (packageBin in Compile) map { _ =>
+
   /**
     * 显示一个目录下的所有文件，包括文件夹中的文件，返回文件和对应的文件名称，文件名称采用相对于prefix的相对路径
     */
-  def listAllFiles(root: File, prefix: String):List[(File, String)] = {
+  def listAllFiles(root: File, prefix: String): List[(File, String)] = {
     root.listFiles().flatMap {
-      f => if(f.isDirectory)
-        listAllFiles(f, prefix + f.getName + "/")
-      else
-        List((f, prefix + f.getName))
+      f =>
+        if (f.isDirectory)
+          listAllFiles(f, prefix + f.getName + "/")
+        else
+          List((f, prefix + f.getName))
     }.toList
   }
 
-  listAllFiles(new File("./web"), "web/"):::listAllFiles(new File("./conf"), "conf/")
-    .map{ case (f: File, path:String) => f -> path }
+  listAllFiles(new File("./web"), "web/") ::: listAllFiles(new File("./conf"), "conf/")
+    .map { case (f: File, path: String) => f -> path }
 }
 
 javaOptions in Universal ++= Seq(
