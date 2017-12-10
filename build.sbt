@@ -60,29 +60,18 @@ resolvers ++= Seq(
 )
 
 //native package
+enablePlugins(JavaAppPackaging)
 
-enablePlugins(JavaServerAppPackaging)
 mainClass in Compile := Some("xiatian.wiki.Main")
 //把运行时需要的配置文件拷贝到打包后的主目录下
 
-mappings in Universal <++= (packageBin in Compile) map { _ =>
 
-  /**
-    * 显示一个目录下的所有文件，包括文件夹中的文件，返回文件和对应的文件名称，文件名称采用相对于prefix的相对路径
-    */
-  def listAllFiles(root: File, prefix: String): List[(File, String)] = {
-    root.listFiles().flatMap {
-      f =>
-        if (f.isDirectory)
-          listAllFiles(f, prefix + f.getName + "/")
-        else
-          List((f, prefix + f.getName))
-    }.toList
-  }
+mappings in (Compile, packageDoc) := Seq()
 
-  listAllFiles(new File("./web"), "web/") ::: listAllFiles(new File("./conf"), "conf/")
-    .map { case (f: File, path: String) => f -> path }
-}
+//把运行时需要的配置文件拷贝到打包后的主目录下
+//mappings in Universal += file("my.conf") -> "my.conf"
+mappings in Universal ++= directory("web")
+mappings in Universal ++= directory("conf")
 
 javaOptions in Universal ++= Seq(
   // -J params will be added as jvm parameters
