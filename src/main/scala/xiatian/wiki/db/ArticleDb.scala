@@ -2,7 +2,7 @@ package xiatian.wiki.db
 
 import java.io.File
 
-import xiatian.wiki.Conf
+import xiatian.wiki.common.MyConf
 
 /**
   * 维基百科的文章数据库，采用RocksDB保存
@@ -11,7 +11,7 @@ import xiatian.wiki.Conf
   *         School of IRM, Renmin University of China.
   *         Oct 10, 2017 16:26
   */
-object ArticleDb extends StoreRocksDB(Conf.articleDbFile) {
+object ArticleDb extends StoreRocksDB(MyConf.articleDbFile) {
 
   def generateFromRawXml(f: File): Unit ={
 
