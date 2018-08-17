@@ -1,4 +1,4 @@
-name := "wiki-tools"
+name := "wikidigger"
 version := "0.1"
 
 
@@ -10,7 +10,7 @@ lazy val root = (project in file(".")).
   enablePlugins(BuildInfoPlugin).
   settings(
     buildInfoKeys := BuildInfoKey.ofN(name, version, scalaVersion, sbtVersion),
-    buildInfoPackage := "xiatian.wiki.common"
+    buildInfoPackage := "wiki.digger.common"
   )
 
 buildInfoKeys ++= Seq[BuildInfoKey](
