@@ -1,20 +1,21 @@
-package xiatian.wiki.db
+package wiki.digger.db
 
 import java.io.File
 import java.nio.charset.StandardCharsets
 
-import org.rocksdb._
 import org.rocksdb.util.SizeUnit
+import org.rocksdb._
 import org.slf4j.LoggerFactory
 
 /**
+  * Key-Value类型的数据库基类
   *
   * @author Tian Xia
   *         School of IRM, Renmin University of China.
-  *         Oct 10, 2017 16:29
+  *         Aug 17, 2018 10:29
   */
-class StoreRocksDB(dbFile: File, readOnly: Boolean = false) {
-  val log = LoggerFactory.getLogger(this.getClass)
+class KeyValueDb(name: String, dbFile: File, readOnly: Boolean = false) {
+  val LOG = LoggerFactory.getLogger(this.getClass)
   val UTF8 = StandardCharsets.UTF_8
 
   RocksDB.loadLibrary()
@@ -30,9 +31,11 @@ class StoreRocksDB(dbFile: File, readOnly: Boolean = false) {
   // a factory method that returns a RocksDB instance
   val db: RocksDB = {
     val rocksDB = RocksDB.open(options, dbFile.getAbsolutePath)
-    log.debug(s"Open RocksDB from ${dbFile.getCanonicalFile}")
+    LOG.debug(s"Open RocksDB from ${dbFile.getCanonicalFile}")
     rocksDB
   }
+
+  def put(k: Array[Byte], v: Array[Byte]) = db.put(k, v)
 
   def put(k: String, v: String) =
     db.put(
@@ -40,28 +43,30 @@ class StoreRocksDB(dbFile: File, readOnly: Boolean = false) {
       v.getBytes(UTF8)
     )
 
-  def commit = {}
-
-  // if l is sorted by key is better
-  def putList(l: List[(String, String)]) = {
+  def put(pairs: Seq[(String, String)]) = {
     val writeOpt = new WriteOptions()
     val batch = new WriteBatch()
-    l.foreach(ll => {
-      val (k, v) = ll
-      batch.put(k.getBytes(UTF8), v.getBytes(UTF8))
-    })
+    pairs.foreach {
+      case (k, v) =>
+        batch.put(k.getBytes(UTF8), v.getBytes(UTF8))
+
+    }
     db.write(writeOpt, batch)
   }
 
+  def close = {
+    db.close()
 
-  def get(k: String): Option[String] = {
-    try {
-      val v = db.get(k.getBytes(UTF8))
-      Some(new String(v, UTF8))
-    } catch {
-      case e: java.lang.NullPointerException => None
-    }
   }
 
-  def shutdown() = db.close()
+  def get(k: Array[Byte]): Option[Array[Byte]] = {
+    val v = db.get(k)
+    if (v == null) None else Some(v)
+  }
+
+  def get(k: String): Option[String] = {
+    val v = db.get(k.getBytes(UTF8))
+    if (v == null) None else Some(new String(v, UTF8))
+  }
+
 }

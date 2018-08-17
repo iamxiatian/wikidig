@@ -1,4 +1,4 @@
-package xiatian.wiki.model
+package wiki.digger.model
 
 /**
   * 维基百科网页的类型

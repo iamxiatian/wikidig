@@ -1,10 +1,14 @@
-package xiatian.wiki.common
+package wiki.digger.common
 
 import java.io.File
+import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 import com.typesafe.config.impl.Parseable
 import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions}
 
+import scala.collection.JavaConverters._
+import scala.io.Source
 /**
   * System Settings configuration
   *

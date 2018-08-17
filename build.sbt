@@ -1,8 +1,8 @@
 name := "wikidigger"
 version := "0.1"
 
-
 scalaVersion := "2.12.3"
+sbtVersion := "1.2.1"
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
 

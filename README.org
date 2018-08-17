@@ -1,6 +1,6 @@
-* wiki-tools
+* wikidigger
 
-基于Scala的维基百科挖掘工具
+wikidigger: Mining wikipedia knowledge.
 
 ** Wiki Clickstream
 
@@ -159,3 +159,11 @@ http://ftp.acc.umu.se/mirror/wikimedia.org/dumps/zhwiki/20170520/
     ```
     select * from categorylinks where cl_from = 21722732
     ```
+
+** Third libraries
+  1. JWPL (Java Wikipedia Library) https://dkpro.github.io/dkpro-jwpl/
+
+  JWPL is a free, Java-based application programming interface that allows to
+  access all information in Wikipedia.
+
+  2. 

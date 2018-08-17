@@ -1,3 +1,3 @@
-package xiatian.wiki.model
+package wiki.digger.model
 
 case class Link(url:String, anchor: String)

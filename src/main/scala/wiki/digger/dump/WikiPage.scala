@@ -1,4 +1,4 @@
-package xiatian.wiki.dump
+package wiki.digger.dump
 
 import java.io.{DataOutputStream, IOException}
 import java.util

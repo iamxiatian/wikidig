@@ -1,8 +1,8 @@
-package xiatian.wiki.parser
+package wiki.digger.parser
 
 import java.util
-import java.util.{HashSet, LinkedList, List, Set}
-import java.util.regex.{Matcher, Pattern}
+import java.util.List
+import java.util.regex.Pattern
 
 object WikiTextParser {
   private val CATEGORY_PATTERN = Pattern.compile("\\[\\[Category\\:([^\\]|^\\|]+)(\\|[^\\]]+)?\\]\\]", Pattern.CASE_INSENSITIVE)
@@ -47,7 +47,6 @@ object WikiTextParser {
     val pp = parser.parse(text)
     val internalLinks = new util.LinkedList[String]
     if (pp != null) {
-      import scala.collection.JavaConversions._
       for (link <- pp.getLinks) {
         if (link.getType eq Link.`type`.INTERNAL) internalLinks.add(link.getTarget)
       }
