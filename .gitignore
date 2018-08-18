@@ -1,4 +1,5 @@
 .idea/
+conf/my.conf
 .idea_modules/
 project/project/
 project/target/

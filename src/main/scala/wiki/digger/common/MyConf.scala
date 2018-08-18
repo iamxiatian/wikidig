@@ -1,14 +1,10 @@
 package wiki.digger.common
 
 import java.io.File
-import java.io.File
-import java.util.concurrent.ConcurrentHashMap
 
 import com.typesafe.config.impl.Parseable
 import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions}
 
-import scala.collection.JavaConverters._
-import scala.io.Source
 /**
   * System Settings configuration
   *
@@ -44,6 +40,14 @@ object MyConf {
   def getInt(path: String) = config.getInt(path)
 
   def getBoolean(path: String) = config.getBoolean(path)
+
+  def wikiDbHost = config.getString("wiki.db.host")
+
+  def wikiDbName = config.getString("wiki.db.name")
+
+  def wikiDbUser = config.getString("wiki.db.user")
+
+  def wikiDbPassword = config.getString("wiki.db.password")
 
 
   val screenConfigText: String = {

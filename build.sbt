@@ -89,6 +89,11 @@ libraryDependencies += "org.jsoup" % "jsoup" % "1.11.2"
 libraryDependencies += "com.hankcs" % "hanlp" % "portable-1.2.11"
 libraryDependencies += "org.ahocorasick" % "ahocorasick" % "0.3.0"
 
+//JWPL
+libraryDependencies += "de.tudarmstadt.ukp.wikipedia" % "de.tudarmstadt.ukp.wikipedia.api" % "1.1.0"
+libraryDependencies += "de.tudarmstadt.ukp.wikipedia" % "de.tudarmstadt.ukp.wikipedia.datamachine" % "1.1.0"
+libraryDependencies += "de.tudarmstadt.ukp.wikipedia" % "de.tudarmstadt.ukp.wikipedia.util" % "1.1.0"
+libraryDependencies += "de.tudarmstadt.ukp.wikipedia" % "de.tudarmstadt.ukp.wikipedia.parser" % "1.1.0"
 
 //CIRCE JSON Parser
 libraryDependencies ++= Seq(

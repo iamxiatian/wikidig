@@ -166,4 +166,40 @@ http://ftp.acc.umu.se/mirror/wikimedia.org/dumps/zhwiki/20170520/
   JWPL is a free, Java-based application programming interface that allows to
   access all information in Wikipedia.
 
-  2. 
+  2. wp-download https://github.com/pacurromon/wp-download
+
+  With wp-download you can automatically download the newest database dumps for
+  all language edition you want:
+
+** Data
+
+*** English:
+
+   https://dumps.wikimedia.org/enwiki/20180801/
+
+   https://dumps.wikimedia.org/enwiki/20180801/enwiki-20180801-pages-articles.xml.bz2
+
+   https://dumps.wikimedia.org/enwiki/20180801/enwiki-20180801-pagelinks.sql.gz
+
+   https://dumps.wikimedia.org/enwiki/20180801/enwiki-20180801-categorylinks.sql.gz
+
+*** Chinese
+    https://dumps.wikimedia.org/zhwiki/20180801/
+
+    https://dumps.wikimedia.org/zhwiki/20180801/zhwiki-20180801-pages-articles.xml.bz2
+
+    https://dumps.wikimedia.org/zhwiki/20180801/zhwiki-20180801-pagelinks.sql.gz
+
+    https://dumps.wikimedia.org/zhwiki/20180801/zhwiki-20180801-categorylinks.sql.gz
+
+
+
+** Create database
+CREATE DATABASE digger DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE USER 'xiatian'@'%' IDENTIFIED BY 'password';
+
+GRANT ALL ON digger.* TO 'xiatian'@'%';
+
+
+
