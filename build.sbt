@@ -56,10 +56,15 @@ libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.16.0"
 libraryDependencies += "com.github.pathikrit" %% "better-files-akka" % "3.0.0"
 
 
-//bing and mongodb driver
+//database driver
 libraryDependencies += "org.postgresql" % "postgresql" % "42.2.2"
 libraryDependencies += "org.rocksdb" % "rocksdbjni" % "5.7.2"
+libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.23"
 
+libraryDependencies ++= Seq(
+  "com.typesafe.slick" %% "slick" % "3.2.2",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.2.2"
+)
 
 libraryDependencies ++= Seq(
   "com.typesafe.slick" %% "slick" % "3.2.2",
@@ -103,6 +108,9 @@ libraryDependencies ++= Seq(
 ).map(_ % "0.9.1")
 
 
+//scala tensorflow
+libraryDependencies += "org.platanios" %% "tensorflow" % "0.2.3"
+libraryDependencies += "org.platanios" %% "tensorflow" % "0.2.3" classifier "linux-cpu-x86_64"
 
 //Scala Test library
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
@@ -116,7 +124,7 @@ import com.typesafe.sbt.SbtNativePackager.autoImport.NativePackagerHelper._
 //enablePlugins(JavaServerAppPackaging)
 enablePlugins(JavaAppPackaging)
 
-mainClass in Compile := Some("xiatian.wiki.Start")
+mainClass in Compile := Some("wiki.digger.Start")
 
 mappings in(Compile, packageDoc) := Seq()
 
@@ -140,6 +148,9 @@ initialCommands in console +=
   """
     |import akka.actor._
     |import akka.routing._
+    |import de.tudarmstadt.ukp.wikipedia.api._
+    |import wiki.digger.parser.JWPL
+    |
     |
   """.stripMargin
 
