@@ -58,6 +58,11 @@ object MyConf {
        |│   ├── port ==> 7000
        |│   └── API http port ==> ssss
        |│
+       |├── mysql config:
+       |│   ├── host ==> $wikiDbHost
+       |│   ├── database ==> $wikiDbName
+       |│   └── user ==> $wikiDbUser
+       |│
        |└── fetcher config:
        |    ├── fetcher identification ==> xxx
        |    └── API http port ==> ssss

@@ -3,8 +3,8 @@ package wiki.digger.db
 import java.io.File
 import java.nio.charset.StandardCharsets
 
-import org.rocksdb.util.SizeUnit
 import org.rocksdb._
+import org.rocksdb.util.SizeUnit
 import org.slf4j.LoggerFactory
 
 /**

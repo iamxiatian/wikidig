@@ -2,8 +2,6 @@ package wiki.digger.db
 
 import java.io.File
 
-import wiki.digger.common.MyConf
-
 /**
   * 维基百科的文章数据库，采用RocksDB保存
   *
@@ -11,9 +9,9 @@ import wiki.digger.common.MyConf
   *         School of IRM, Renmin University of China.
   *         Oct 10, 2017 16:26
   */
-object ArticleDb extends KeyValueDb(MyConf.articleDbFile) {
+object ArticleDb extends KeyValueDb("article", new File("db/article")) {
 
-  def generateFromRawXml(f: File): Unit ={
+  def generateFromRawXml(f: File): Unit = {
 
   }
 
@@ -25,10 +23,7 @@ object ArticleDb extends KeyValueDb(MyConf.articleDbFile) {
     put("name", "xiatian")
 
     println(get("name"))
-
-    shutdown()
   }
-
 
 
 }

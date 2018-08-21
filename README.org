@@ -171,35 +171,44 @@ http://ftp.acc.umu.se/mirror/wikimedia.org/dumps/zhwiki/20170520/
   With wp-download you can automatically download the newest database dumps for
   all language edition you want:
 
-** Data
-
-*** English:
-
-   https://dumps.wikimedia.org/enwiki/20180801/
-
-   https://dumps.wikimedia.org/enwiki/20180801/enwiki-20180801-pages-articles.xml.bz2
-
-   https://dumps.wikimedia.org/enwiki/20180801/enwiki-20180801-pagelinks.sql.gz
-
-   https://dumps.wikimedia.org/enwiki/20180801/enwiki-20180801-categorylinks.sql.gz
-
-*** Chinese
-    https://dumps.wikimedia.org/zhwiki/20180801/
-
-    https://dumps.wikimedia.org/zhwiki/20180801/zhwiki-20180801-pages-articles.xml.bz2
-
-    https://dumps.wikimedia.org/zhwiki/20180801/zhwiki-20180801-pagelinks.sql.gz
-
-    https://dumps.wikimedia.org/zhwiki/20180801/zhwiki-20180801-categorylinks.sql.gz
-
-
 
 ** Create database
-CREATE DATABASE digger DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
-CREATE USER 'xiatian'@'%' IDENTIFIED BY 'password';
+使用JWPL的DataMachine创建某一个日期的维基百科库。
 
-GRANT ALL ON digger.* TO 'xiatian'@'%';
+*** Data
+**** English:
+   https://dumps.wikimedia.org/enwiki/20180801/
+   https://dumps.wikimedia.org/enwiki/20180801/enwiki-20180801-pages-articles.xml.bz2
+   https://dumps.wikimedia.org/enwiki/20180801/enwiki-20180801-pagelinks.sql.gz
+   https://dumps.wikimedia.org/enwiki/20180801/enwiki-20180801-categorylinks.sql.gz
+   
+**** Chinese
+    https://dumps.wikimedia.org/zhwiki/20180801/
+    https://dumps.wikimedia.org/zhwiki/20180801/zhwiki-20180801-pages-articles.xml.bz2
+    https://dumps.wikimedia.org/zhwiki/20180801/zhwiki-20180801-pagelinks.sql.gz
+    https://dumps.wikimedia.org/zhwiki/20180801/zhwiki-20180801-categorylinks.sql.gz
 
+*** 创建数据库语句
+
+    CREATE DATABASE digger DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+    CREATE USER 'xiatian'@'%' IDENTIFIED BY 'password';
+
+    GRANT ALL ON digger.* TO 'xiatian'@'%';
+*** 利用JWPL处理下载的数据
+    - 下载JWPL源代码，解压开，进行编译：
+      mvn -DskipTests=true package
+
+    - 执行命令：
+    nohup java -Xmx16G -jar de.tudarmstadt.ukp.wikipedia.datamachine-1.2.0-SNAPSHOT-jar-with-dependencies.jar english Contents Disambiguation_pages /data/wiki/enwiki/20180801 &
+     此时会运行较长时间，需要数个小时；运行完毕后，会在enwiki/20180801/目录下生成一个output目录，里面包含了可以导入数据库的文本文件。
+
+    － 执行导入命令
+    nohup mysqlimport -uroot -pxiatian --local --default-character-set=utf8 digger *.txt > /tmp/nohup.log &
+
+英文：Contents Disambiguation_pages 
+
+中文：页面分类 消歧义
 
 

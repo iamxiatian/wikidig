@@ -91,7 +91,7 @@ libraryDependencies += "com.google.guava" % "guava" % "24.0-jre"
 libraryDependencies += "org.jsoup" % "jsoup" % "1.11.2"
 
 //NLP libraries
-libraryDependencies += "com.hankcs" % "hanlp" % "portable-1.2.11"
+libraryDependencies += "com.hankcs" % "hanlp" % "portable-1.6.6"
 libraryDependencies += "org.ahocorasick" % "ahocorasick" % "0.3.0"
 
 //JWPL
@@ -146,11 +146,20 @@ scriptClasspath := Seq("*")
 
 initialCommands in console +=
   """
+    |import scala.collection.JavaConverters._
     |import akka.actor._
     |import akka.routing._
     |import de.tudarmstadt.ukp.wikipedia.api._
     |import wiki.digger.parser.JWPL
+    |import com.hankcs.hanlp.HanLP
+    |import com.hankcs.hanlp.dependency.nnparser.NeuralNetworkDependencyParser
+    |import com.hankcs.hanlp.seg.common._
+    |import com.hankcs.hanlp.seg._
+    |import wiki.digger.algorithm.ChineseNLP._
     |
+    |val text = "他在浙江金华出生，他的名字叫金华。"
+    |val terms = segment.seg(text)
+    |val words = NeuralNetworkDependencyParser.compute(terms).asScala.toList
     |
   """.stripMargin
 
