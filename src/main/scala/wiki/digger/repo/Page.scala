@@ -1,6 +1,9 @@
-package wiki.digger.db.dao
+package wiki.digger.repo
+
+import wiki.digger.repo.core.Repo
 
 import scala.concurrent.Future
+
 
 case class Page(id: Long,
                 pageId: Int,
@@ -12,7 +15,7 @@ object PageRepo extends Repo[Page] {
 
   import profile.api._
 
-  class AlertTable(tag: Tag) extends
+  class PageTable(tag: Tag) extends
     Table[Page](tag, "Page") {
 
     def id = column[Long]("id", O.PrimaryKey)
@@ -28,7 +31,7 @@ object PageRepo extends Repo[Page] {
     def * = (id, pageId, name, text, isDisambiguation) <> (Page.tupled, Page.unapply)
   }
 
-  val pages = TableQuery[AlertTable]
+  val pages = TableQuery[PageTable]
 
   def findByPageId(pageId: Int): Future[Option[Page]] = db.run {
     pages.filter(_.pageId === pageId).result.headOption

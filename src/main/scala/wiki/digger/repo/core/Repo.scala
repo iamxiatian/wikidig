@@ -1,4 +1,4 @@
-package wiki.digger.db.dao
+package wiki.digger.repo.core
 
 import org.slf4j.LoggerFactory
 import slick.jdbc.MySQLProfile
@@ -12,7 +12,6 @@ import scala.util.Try
   * @tparam T
   */
 trait Repo[T] {
-  //导入执行的上下文
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   val profile = MySQLProfile
@@ -20,16 +19,4 @@ trait Repo[T] {
   val db = RepoProvider.mysqlDb
 
   val LOG = LoggerFactory.getLogger(this.getClass)
-
-//  def createSchema: Future[Try[Unit]]
-//
-//  def dropSchema: Future[Try[Unit]]
-//
-//  def count: Future[Int]
-//
-//  def list(page: Int,
-//           limit: Int,
-//           sortField: String,
-//           order: String): Future[Seq[T]]
-
 }

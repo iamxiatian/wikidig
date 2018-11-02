@@ -22,7 +22,7 @@ buildInfoOptions += BuildInfoOption.BuildTime
 buildInfoOptions += BuildInfoOption.ToJson
 
 //akka
-val akkaVersion = "2.5.14"
+val akkaVersion = "2.5.17"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-remote" % akkaVersion
@@ -57,7 +57,6 @@ libraryDependencies += "com.github.pathikrit" %% "better-files-akka" % "3.0.0"
 
 
 //database driver
-libraryDependencies += "org.postgresql" % "postgresql" % "42.2.2"
 libraryDependencies += "org.rocksdb" % "rocksdbjni" % "5.7.2"
 libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.23"
 
@@ -70,13 +69,6 @@ libraryDependencies ++= Seq(
   "com.typesafe.slick" %% "slick" % "3.2.2",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.2.2"
 )
-
-
-libraryDependencies += "com.github.tminglei" %% "slick-pg" % "0.16.0"
-libraryDependencies += "com.github.tminglei" %% "slick-pg_joda-time" % "0.16.0"
-libraryDependencies += "com.github.tminglei" %% "slick-pg_spray-json" % "0.16.0"
-libraryDependencies += "com.github.tminglei" %% "slick-pg_jts" % "0.16.0"
-
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2"
 
@@ -107,10 +99,6 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-parser"
 ).map(_ % "0.9.1")
 
-
-//scala tensorflow
-libraryDependencies += "org.platanios" %% "tensorflow" % "0.2.3"
-libraryDependencies += "org.platanios" %% "tensorflow" % "0.2.3" classifier "linux-cpu-x86_64"
 
 //Scala Test library
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
@@ -149,17 +137,6 @@ initialCommands in console +=
     |import scala.collection.JavaConverters._
     |import akka.actor._
     |import akka.routing._
-    |import de.tudarmstadt.ukp.wikipedia.api._
-    |import wiki.digger.parser.JWPL
-    |import com.hankcs.hanlp.HanLP
-    |import com.hankcs.hanlp.dependency.nnparser.NeuralNetworkDependencyParser
-    |import com.hankcs.hanlp.seg.common._
-    |import com.hankcs.hanlp.seg._
-    |import wiki.digger.algorithm.ChineseNLP._
-    |
-    |val text = "他在浙江金华出生，他的名字叫金华。"
-    |val terms = segment.seg(text)
-    |val words = NeuralNetworkDependencyParser.compute(terms).asScala.toList
     |
   """.stripMargin
 
