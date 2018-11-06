@@ -1,4 +1,4 @@
-package wiki.digger.algorithm
+package wiki.dig.algorithm
 
 import com.hankcs.hanlp.HanLP
 import com.hankcs.hanlp.seg.Segment

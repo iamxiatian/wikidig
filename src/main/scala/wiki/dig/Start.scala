@@ -1,4 +1,4 @@
-package wiki.digger
+package wiki.dig
 
 object Start extends App {
 

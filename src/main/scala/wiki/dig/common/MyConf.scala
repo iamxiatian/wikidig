@@ -1,4 +1,4 @@
-package wiki.digger.common
+package wiki.dig.common
 
 import java.io.File
 

@@ -1,6 +1,6 @@
-package wiki.digger.repo
+package wiki.dig.repo
 
-import wiki.digger.repo.core.Repo
+import wiki.dig.repo.core.Repo
 
 import scala.concurrent.Future
 
@@ -14,7 +14,7 @@ object CategoryRepo extends Repo[Category] {
   import profile.api._
 
   class CategoryTable(tag: Tag) extends
-    Table[Category](tag, "Page") {
+    Table[Category](tag, "Category") {
 
     def id = column[Long]("id", O.PrimaryKey)
 
@@ -55,4 +55,7 @@ object CategoryRepo extends Repo[Category] {
       }
     case None => Future.successful(Seq.empty[Category])
   }
+
+
+
 }

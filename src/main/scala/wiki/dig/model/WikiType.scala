@@ -1,4 +1,4 @@
-package wiki.digger.model
+package wiki.dig.model
 
 /**
   * 维基百科网页的类型

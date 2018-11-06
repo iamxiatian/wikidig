@@ -1,4 +1,4 @@
-package wiki.digger.repo.core
+package wiki.dig.repo.core
 
 import java.io.File
 import java.nio.charset.StandardCharsets

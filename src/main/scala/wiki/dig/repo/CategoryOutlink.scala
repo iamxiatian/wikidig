@@ -1,6 +1,6 @@
-package wiki.digger.repo
+package wiki.dig.repo
 
-import wiki.digger.repo.core.Repo
+import wiki.dig.repo.core.Repo
 
 import scala.concurrent.Future
 

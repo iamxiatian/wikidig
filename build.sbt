@@ -137,6 +137,7 @@ initialCommands in console +=
     |import scala.collection.JavaConverters._
     |import akka.actor._
     |import akka.routing._
+    |import wiki.digger.repo._
     |
   """.stripMargin
 

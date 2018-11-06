@@ -1,6 +1,6 @@
-package wiki.digger.repo.core
+package wiki.dig.repo.core
 
-import wiki.digger.common.MyConf
+import wiki.dig.common.MyConf
 
 object RepoProvider {
   import slick.jdbc.MySQLProfile.api._

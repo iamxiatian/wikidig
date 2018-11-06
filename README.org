@@ -1,6 +1,6 @@
-* wikidigger
+* wikidig
 
-wikidigger: Mining wikipedia knowledge.
+wikidig: Dig wikipedia knowledge.
 
 ** Wiki Clickstream
 
@@ -196,6 +196,16 @@ http://ftp.acc.umu.se/mirror/wikimedia.org/dumps/zhwiki/20170520/
     CREATE USER 'xiatian'@'%' IDENTIFIED BY 'password';
 
     GRANT ALL ON digger.* TO 'xiatian'@'%';
+
+*** 数据库中文乱码问题：
+    use digger
+    SET NAMES utf8;
+
+    vi /etc/my.cnf
+    增加：
+    [mysql]
+    default-character-set = utf8
+
 *** 利用JWPL处理下载的数据
     - 下载JWPL源代码，解压开，进行编译：
       mvn -DskipTests=true package

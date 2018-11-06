@@ -1,4 +1,4 @@
-package wiki.digger.repo.core
+package wiki.dig.repo.core
 
 import org.slf4j.LoggerFactory
 import slick.jdbc.MySQLProfile
