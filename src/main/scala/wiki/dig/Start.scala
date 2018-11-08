@@ -10,7 +10,8 @@ object Start extends App {
 
   case class Config(
                      buildCategoryPairs: Boolean = false,
-                     buildHierarchy: Boolean = false
+                     buildHierarchy: Boolean = false,
+                     sample: Option[Int] = None
                    )
 
   val parser = new scopt.OptionParser[Config]("bin/spider") {
@@ -25,6 +26,10 @@ object Start extends App {
 
     opt[Unit]("buildHierarchy").action((_, c) =>
       c.copy(buildHierarchy = true)).text("build category Hierarchy to rocksdb.")
+
+    opt[Int]('s', "sample").optional().
+      action((x, c) => c.copy(sample = Some(x))).
+      text("sample n triangles.")
 
     help("help").text("prints this usage text")
 
@@ -45,6 +50,10 @@ object Start extends App {
         CategoryHierarchyDb.close()
       }
 
+      if(config.sample.nonEmpty) {
+        val n = config.sample.get
+        CategoryHierarchyDb.sample(n)
+      }
     case None => {
       println( """Wrong parameters :(""".stripMargin)
     }

@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
 
 import com.google.common.collect.Lists
+import com.google.common.io.Files
 import org.apache.commons.lang3.StringUtils
 import org.rocksdb._
 import org.slf4j.LoggerFactory
@@ -16,6 +17,7 @@ import wiki.dig.util.ByteUtil
 import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import scala.util.Random
 
 /**
   * wiki层级体系数据库，记录了层级之间的父子关系. 层级体系数据库依赖于CategoryDb主数据库
@@ -153,6 +155,107 @@ object CategoryHierarchyDb extends Db {
     val weights = (0 until count).map(_ => din.readInt())
     din.close
     CNode(depth, weight, outlinks, weights)
+  }
+
+  /**
+    * 抽样n个三角形
+    *
+    * @param n
+    */
+  def sample(n: Int): Unit = {
+    val totalWeight = getTotalWeight().toInt
+
+    val writer = Files.newWriter(new File("./triangle.txt"), UTF_8)
+
+    //在每个节点上按比例抽样。
+    val startNodes = Await.result(CategoryRepo.levelOne(), Duration.Inf).map(_.id)
+    val queue = mutable.Queue.empty[(Int, Int)]
+
+    var counter = 0
+
+    startNodes.foreach(id => queue.enqueue((id, 1)))
+
+    startNodes.foreach(println)
+
+    println(s"total weight: $totalWeight")
+
+    while (queue.nonEmpty) {
+      val (cid, depth) = queue.dequeue()
+
+      val key = ByteUtil.int2bytes(cid)
+
+      getCNode(cid) match {
+        case Some(node) =>
+          counter += 1
+          if (counter % 1000 == 0) {
+            println(s"processing $counter, queue size: ${queue.size}")
+          }
+          val outlinks = node.outlinks
+
+          if (outlinks.size >= 2) {
+            //每个节点上都循环n次，但只有w*(max_depth - depth + 1)/totalWeights 的机率会被选中
+            (0 until n) foreach {
+              _ =>
+                //抽样
+                val r = Random.nextInt(totalWeight)
+                if (r < node.weight) {
+                  //被抽中了，再来抽子节点
+
+
+                  val weights = node.weights
+                  val childTotalWeights = weights.sum + 1
+
+                  //挑选第一个子类
+                  val x = pick(outlinks, weights, Random.nextInt(childTotalWeights))
+
+                  def next(exceptValue: Int): Int = {
+                    val v = pick(outlinks, weights, Random.nextInt(childTotalWeights))
+                    if (v != exceptValue) v else next(exceptValue)
+                  }
+
+                  //挑选第2个子类，但不能和第一个重复
+                  val y = next(x)
+
+                  //output (cid, x, y)
+                  val line = s"${CategoryDb.getNameById(cid)}, ${CategoryDb.getNameById(x)}, ${CategoryDb.getNameById(y)}\n"
+                  writer.write(line)
+                  if (counter % 100 == 0) writer.flush()
+                }
+            }
+          }
+
+          //继续后续抽样处理
+          if (depth <= Max_Depth) {
+            outlinks.foreach(id => queue.enqueue((id, depth + 1)))
+          }
+        case None =>
+          //Error
+          print("X")
+      }
+
+      writer.close()
+    }
+
+  }
+
+  /**
+    * 从outlink中按概率随机挑选一个id
+    *
+    * @param outlinks
+    * @param weights
+    * @return
+    */
+  def pick(outlinks: Seq[Int], weights: Seq[Int], randNumber: Int): Int = {
+    var accumulator = 0
+    outlinks.zip(weights).find {
+      case (id, w) =>
+        if (w + accumulator > randNumber)
+          true
+        else {
+          accumulator += w
+          false
+        }
+    }.map(_._1).getOrElse(outlinks.head)
   }
 }
 
