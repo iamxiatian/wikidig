@@ -37,9 +37,9 @@ object CategoryDb extends Db {
 
   RocksDB.loadLibrary()
 
-  val options = new DBOptions().setCreateIfMissing(true)
+  val options = new DBOptions().setCreateIfMissing(!MyConf.categoryDbReadOnly)
     .setMaxBackgroundCompactions(10)
-    .setCreateMissingColumnFamilies(true)
+    .setCreateMissingColumnFamilies(!MyConf.categoryDbReadOnly)
 
   protected val cfNames = Lists.newArrayList[ColumnFamilyDescriptor](
     new ColumnFamilyDescriptor("default".getBytes(UTF_8)),

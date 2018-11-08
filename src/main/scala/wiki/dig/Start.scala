@@ -1,7 +1,7 @@
 package wiki.dig
 
 import wiki.dig.common.{BuildInfo, MyConf}
-import wiki.dig.db.CategoryDb
+import wiki.dig.db.{CategoryDb, CategoryHierarchyDb}
 
 /**
   * Application Start
@@ -9,7 +9,8 @@ import wiki.dig.db.CategoryDb
 object Start extends App {
 
   case class Config(
-                     buildCategoryPairs: Boolean = false
+                     buildCategoryPairs: Boolean = false,
+                     buildHierarchy: Boolean = false
                    )
 
   val parser = new scopt.OptionParser[Config]("bin/spider") {
@@ -20,7 +21,10 @@ object Start extends App {
     val format: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
 
     opt[Unit]("buildCategoryPairs").action((_, c) =>
-      c.copy(buildCategoryPairs = true)).text("build category id - name pairs to rocksdb.")
+      c.copy(buildCategoryPairs = true)).text("build category info to rocksdb.")
+
+    opt[Unit]("buildHierarchy").action((_, c) =>
+      c.copy(buildHierarchy = true)).text("build category Hierarchy to rocksdb.")
 
     help("help").text("prints this usage text")
 
@@ -34,6 +38,11 @@ object Start extends App {
       if (config.buildCategoryPairs) {
         CategoryDb.build()
         CategoryDb.close()
+      }
+
+      if (config.buildHierarchy) {
+        CategoryHierarchyDb.build()
+        CategoryHierarchyDb.close()
       }
 
     case None => {

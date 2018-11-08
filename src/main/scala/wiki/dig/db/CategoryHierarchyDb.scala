@@ -2,8 +2,10 @@ package wiki.dig.db
 
 import java.io._
 import java.nio.charset.StandardCharsets
+import java.util.regex.Pattern
 
 import com.google.common.collect.Lists
+import org.apache.commons.lang3.StringUtils
 import org.rocksdb._
 import org.slf4j.LoggerFactory
 import wiki.dig.common.MyConf
@@ -11,6 +13,7 @@ import wiki.dig.db.ast.Db
 import wiki.dig.repo.CategoryRepo
 import wiki.dig.util.ByteUtil
 
+import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -35,66 +38,83 @@ object CategoryHierarchyDb extends Db {
 
   protected val cfNames = Lists.newArrayList[ColumnFamilyDescriptor](
     new ColumnFamilyDescriptor("default".getBytes(UTF_8)),
-    new ColumnFamilyDescriptor("name2id".getBytes(UTF_8)) //元数据族
+    new ColumnFamilyDescriptor("meta".getBytes(UTF_8)) //元数据族
   )
 
   protected val cfHandlers = Lists.newArrayList[ColumnFamilyHandle]
 
   protected val db = RocksDB.open(options, dbPath.getAbsolutePath, cfNames, cfHandlers)
 
-  protected val id2nameHandler: ColumnFamilyHandle = cfHandlers.get(0)
-  protected val name2idHandler: ColumnFamilyHandle = cfHandlers.get(1)
+  protected val defaultHandler: ColumnFamilyHandle = cfHandlers.get(0)
+  protected val metaHandler: ColumnFamilyHandle = cfHandlers.get(1)
 
-  /**
-    * 创建类别的ID和名称的双向映射，方便根据ID查名称，或者根据名称查ID
-    */
-  def save(id: Int, name: String): Unit = {
-    val idBytes = ByteUtil.int2bytes(id)
-    val nameBytes = ByteUtil.string2bytes(name)
-    db.put(id2nameHandler, idBytes, nameBytes)
-    db.put(name2idHandler, nameBytes, idBytes)
-  }
+  val Max_Depth = 5
 
-  /**
-    * 根据类别的id获得类别的名称
-    *
-    * @param id
-    * @return
-    */
-  def getNameById(id: Int): Option[String] = {
-    val idBytes = ByteUtil.int2bytes(id)
 
-    Option(db.get(id2nameHandler, idBytes)).map(ByteUtil.bytes2string)
-  }
+  def accept(name: String): Boolean = {
+    val title = name.replaceAll("_", " ").toLowerCase()
 
-  /**
-    * 根据类别的名称获得类别的ID
-    *
-    * @param name
-    * @return
-    */
-  def getIdByName(name: String): Option[Int] = {
-    val nameBytes = ByteUtil.string2bytes(name)
-    Option(db.get(name2idHandler, nameBytes)).map(ByteUtil.bytes2Int)
+    if (title.length > 7) { //保留1980s此类词条
+      val startString = title.substring(0, 4)
+      if (StringUtils.isNumeric(startString)) return false
+    }
+
+    //step 2: remove "list of xxxx" and "index of xxx"
+    if (title.indexOf("index of ") >= 0 ||
+      title.indexOf("list of") >= 0 ||
+      title.indexOf("(disambiguation)") >= 0) return false
+
+    //以年份结尾的词条，符合年份时代结尾的形式文章，如``China national football team results (2000–09)''，因为这类文章的作用更类似于类别，起到信息组织的作用。
+    val pattern = Pattern.compile("\\(\\d{4}(–|\\-)\\d{2,4}\\)$")
+    if (pattern.matcher(title).find) return false
+
+    return true
   }
 
   def build() = {
     val startNodes = Await.result(CategoryRepo.levelOne(), Duration.Inf).map(_.id)
+    val queue = mutable.Queue.empty[(Int, Int)]
 
+    var totalWeight: Long = 0L
 
-    val pageSize = 10000
-    val count = Await.result(CategoryRepo.count(), Duration.Inf)
-    val pages = count / pageSize + 1
-    (1 to pages) foreach {
-      page =>
-        println(s"process $page / $pages ...")
-        val categories = Await.result(CategoryRepo.list(page, pageSize), Duration.Inf)
+    startNodes.foreach(id => queue.enqueue((id, 1)))
 
-        categories.foreach(c => save(c.id, c.name))
+    val sb = new java.lang.StringBuilder()
+    while (queue.nonEmpty) {
+      val (cid, depth) = queue.dequeue()
+
+      val key = ByteUtil.int2bytes(cid)
+
+      if (!db.keyMayExist(key, sb)) {
+        //之前没有保存过，已保证保存的depth最小。
+        val outlinks = CategoryDb.getOutlinks(cid).filter {
+          id =>
+            CategoryDb.getNameById(id) match {
+              case Some(name) =>
+                accept(name)
+              case None => false
+            }
+        }
+        val weights = outlinks.map(CategoryDb.getLinkedCount(_))
+
+        val weight = CategoryDb.getLinkedCount(cid)
+        totalWeight += weight
+
+        val node = CNode(depth, weight, outlinks, weights)
+        db.put(key, node.toBytes())
+        if (depth <= Max_Depth) {
+          outlinks.foreach(id => queue.enqueue((id, depth + 1)))
+        }
+      }
     }
 
+    db.put(metaHandler, "TotalWeight".getBytes(UTF_8), ByteUtil.long2bytes(totalWeight))
     println("DONE")
   }
+
+  def getTotalWeight(): Long = Option(
+    db.get(metaHandler, "TotalWeight".getBytes(UTF_8))
+  ).map(ByteUtil.bytes2Long(_)).getOrElse(1)
 
   /**
     * 数据库名字
@@ -111,11 +131,12 @@ object CategoryHierarchyDb extends Db {
   def readCNode(bytes: Array[Byte]): CNode = {
     val din = new DataInputStream(new ByteArrayInputStream(bytes))
     val depth = din.readInt()
+    val weight = din.readInt()
     val count = din.readInt()
     val outlinks = (0 until count).map(_ => din.readInt())
     val weights = (0 until count).map(_ => din.readInt())
     din.close
-    CNode(depth, outlinks, weights)
+    CNode(depth, weight, outlinks, weights)
   }
 }
 
@@ -123,10 +144,12 @@ object CategoryHierarchyDb extends Db {
   * 类别节点
   *
   * @param depth    当前类别节点的深度
+  * @param weight   当前类别的权重
   * @param outlinks 当前类别节点的出链，即下级子类
   * @param weights  对应子类的权重，当前为出入量数量+页面数量
   */
 case class CNode(depth: Int,
+                 weight: Int,
                  outlinks: Seq[Int],
                  weights: Seq[Int]
                 ) {
@@ -135,6 +158,8 @@ case class CNode(depth: Int,
     val dos = new DataOutputStream(out)
 
     dos.writeInt(depth)
+    dos.writeInt(weight)
+
     dos.writeInt(outlinks.size)
     outlinks.foreach(dos.writeInt(_))
     weights.foreach(dos.writeInt(_))

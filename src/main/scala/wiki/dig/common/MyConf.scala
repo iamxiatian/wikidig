@@ -49,12 +49,14 @@ object MyConf {
 
   lazy val dbRootDir = new File(config.getString("dig.db.root.dir"))
 
+  lazy val categoryDbReadOnly = config.getBoolean("dig.db.category.readonly")
+
   val screenConfigText: String = {
     s"""
        |My configuration(build: ${BuildInfo.builtAtString}):
        |├── dig db:
        |│   ├── root path ==> ${dbRootDir.getCanonicalPath}
-       |│   ├── port ==> 7000
+       |│   ├── category db readonly ==> $categoryDbReadOnly
        |│   └── API http port ==> ssss
        |│
        |├── mysql config:
