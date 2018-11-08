@@ -5,8 +5,8 @@ import wiki.dig.repo.core.Repo
 import scala.concurrent.Future
 
 
-case class CategoryOutlink(id: Long,
-                           outLinks: Long)
+case class CategoryOutlink(id: Int,
+                           outLinks: Int)
 
 object CategoryOutlinkRepo extends Repo[CategoryOutlink] {
 
@@ -15,16 +15,16 @@ object CategoryOutlinkRepo extends Repo[CategoryOutlink] {
   class CategoryOutlinkTable(tag: Tag) extends
     Table[CategoryOutlink](tag, "category_outlinks") {
 
-    def id = column[Long]("id", O.PrimaryKey)
+    def id = column[Int]("id", O.PrimaryKey)
 
-    def outLinks = column[Long]("outLinks")
+    def outLinks = column[Int]("outLinks")
 
     def * = (id, outLinks) <> (CategoryOutlink.tupled, CategoryOutlink.unapply)
   }
 
   val entities = TableQuery[CategoryOutlinkTable]
 
-  def findOutlinksById(id: Long): Future[Seq[Long]] = db.run {
+  def findOutlinksById(id: Int): Future[Seq[Int]] = db.run {
     entities.filter(_.id === id).map(_.outLinks).result
   }
 }

@@ -37,11 +37,11 @@ object CategoryRepo extends Repo[Category] {
 
   val entities = TableQuery[CategoryTable]
 
-  def findById(id: Long): Future[Option[Category]] = db.run {
+  def findById(id: Int): Future[Option[Category]] = db.run {
     entities.filter(_.id === id).result.headOption
   }
 
-  def findByIds(ids: Seq[Long]): Future[Seq[Category]] = db.run {
+  def findByIds(ids: Seq[Int]): Future[Seq[Category]] = db.run {
     entities.filter(_.id.inSet(ids.toSet)).result
   }
 
