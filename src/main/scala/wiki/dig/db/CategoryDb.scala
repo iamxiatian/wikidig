@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets
 import com.google.common.collect.Lists
 import org.rocksdb._
 import org.slf4j.LoggerFactory
+import wiki.dig.common.MyConf
 import wiki.dig.db.ast.Db
 import wiki.dig.repo.{CategoryInlinkRepo, CategoryOutlinkRepo, CategoryPageRepo, CategoryRepo}
 import wiki.dig.util.ByteUtil
@@ -22,14 +23,14 @@ import scala.concurrent.duration.Duration
   *
   * 类别的出链，来自于category_outlinks
   *
-  * 类别指向的页面，来自于category_pages
+  * 类别指向的页面，来自于category_pages.
   */
 object CategoryDb extends Db {
   val LOG = LoggerFactory.getLogger(this.getClass)
 
   import StandardCharsets.UTF_8
 
-  val dbPath = new File("./db/category/main")
+  val dbPath = new File(MyConf.dbRootDir, "category/main")
   if (!dbPath.getParentFile.exists())
     dbPath.getParentFile.mkdirs()
 
@@ -58,39 +59,6 @@ object CategoryDb extends Db {
   protected val outlinksHandler: ColumnFamilyHandle = cfHandlers.get(1)
   protected val pagesHandler: ColumnFamilyHandle = cfHandlers.get(1)
 
-  /**
-    * 创建类别的ID和名称的双向映射，方便根据ID查名称，或者根据名称查ID
-    */
-  def save(id: Int, name: String): Unit = {
-    val idBytes = ByteUtil.int2bytes(id)
-    val nameBytes = ByteUtil.string2bytes(name)
-    db.put(id2nameHandler, idBytes, nameBytes)
-    db.put(name2idHandler, nameBytes, idBytes)
-  }
-
-  /**
-    * 根据类别的id获得类别的名称
-    *
-    * @param id
-    * @return
-    */
-  def getNameById(id: Int): Option[String] = {
-    val idBytes = ByteUtil.int2bytes(id)
-
-    Option(db.get(id2nameHandler, idBytes)).map(ByteUtil.bytes2string)
-  }
-
-  /**
-    * 根据类别的名称获得类别的ID
-    *
-    * @param name
-    * @return
-    */
-  def getIdByName(name: String): Option[Int] = {
-    val nameBytes = ByteUtil.string2bytes(name)
-    Option(db.get(name2idHandler, nameBytes)).map(ByteUtil.bytes2Int)
-  }
-
   def build() = {
     val pageSize = 5000
     val count = Await.result(CategoryRepo.count(), Duration.Inf)
@@ -102,7 +70,7 @@ object CategoryDb extends Db {
 
         categories.foreach {
           c =>
-            save(c.id, c.name)
+            saveIdName(c.id, c.name)
             saveInlinks(c.id)
             saveOutlinks(c.id)
             savePages(c.id)
@@ -112,28 +80,88 @@ object CategoryDb extends Db {
     println("DONE")
   }
 
-  def saveInlinks(cid: Int) = {
+  /**
+    * 获取当前分类的入链，出链，和页面数量之和
+    */
+  def getLinkedCount(cid: Int): Int = {
+    getInlinkCount(cid).getOrElse(0) +
+      getOutlinkCount(cid).getOrElse(0) +
+      getPageCount(cid).getOrElse(0)
+  }
+
+  /**
+    * 创建类别的ID和名称的双向映射，方便根据ID查名称，或者根据名称查ID
+    */
+  private def saveIdName(id: Int, name: String): Unit = {
+    val idBytes = ByteUtil.int2bytes(id)
+    val nameBytes = ByteUtil.string2bytes(name)
+    db.put(id2nameHandler, idBytes, nameBytes)
+    db.put(name2idHandler, nameBytes, idBytes)
+  }
+
+  def getNameById(id: Int): Option[String] = Option(
+    db.get(id2nameHandler, ByteUtil.int2bytes(id))
+  ).map(ByteUtil.bytes2string)
+
+  def getIdByName(name: String): Option[Int] = Option(
+    db.get(name2idHandler, ByteUtil.string2bytes(name))
+  ).map(ByteUtil.bytes2Int)
+
+  private def saveInlinks(cid: Int) = {
     val links = Await.result(CategoryInlinkRepo.findInlinksById(cid), Duration.Inf)
     val key = ByteUtil.int2bytes(cid)
     val value = getBytesFromSeq(links)
     db.put(inlinksHandler, key, value)
   }
 
-  def saveOutlinks(cid: Int) = {
+  def getInlinks(cid: Int): Seq[Int] = Option(
+    db.get(inlinksHandler, ByteUtil.int2bytes(cid))
+  ) match {
+    case Some(bytes) => readSeqFromBytes(bytes)
+    case None => Seq.empty
+  }
+
+  def getInlinkCount(cid: Int): Option[Int] = Option(
+    db.get(inlinksHandler, ByteUtil.int2bytes(cid))
+  ).map(readSeqSizeFromBytes)
+
+  private def saveOutlinks(cid: Int) = {
     val links = Await.result(CategoryOutlinkRepo.findOutlinksById(cid), Duration.Inf)
     val key = ByteUtil.int2bytes(cid)
     val value = getBytesFromSeq(links)
     db.put(outlinksHandler, key, value)
   }
 
-  def savePages(cid: Int) = {
+  def getOutlinks(cid: Int): Seq[Int] = Option(
+    db.get(outlinksHandler, ByteUtil.int2bytes(cid))
+  ) match {
+    case Some(bytes) => readSeqFromBytes(bytes)
+    case None => Seq.empty
+  }
+
+  def getOutlinkCount(cid: Int): Option[Int] = Option(
+    db.get(outlinksHandler, ByteUtil.int2bytes(cid))
+  ).map(readSeqSizeFromBytes)
+
+  private def savePages(cid: Int) = {
     val pageIds = Await.result(CategoryPageRepo.findPagesById(cid), Duration.Inf)
     val key = ByteUtil.int2bytes(cid)
     val value = getBytesFromSeq(pageIds)
     db.put(pagesHandler, key, value)
   }
 
-  def getBytesFromSeq(ids: Seq[Int]): Array[Byte] = {
+  def getPages(cid: Int): Seq[Int] = Option(
+    db.get(pagesHandler, ByteUtil.int2bytes(cid))
+  ) match {
+    case Some(bytes) => readSeqFromBytes(bytes)
+    case None => Seq.empty
+  }
+
+  def getPageCount(cid: Int): Option[Int] = Option(
+    db.get(pagesHandler, ByteUtil.int2bytes(cid))
+  ).map(readSeqSizeFromBytes)
+
+  private def getBytesFromSeq(ids: Seq[Int]): Array[Byte] = {
     val out = new ByteArrayOutputStream()
     val dos = new DataOutputStream(out)
 
@@ -146,12 +174,19 @@ object CategoryDb extends Db {
     out.toByteArray
   }
 
-  def readSeqFromBytes(bytes: Array[Byte]): Seq[Int] = {
+  private def readSeqFromBytes(bytes: Array[Byte]): Seq[Int] = {
     val din = new DataInputStream(new ByteArrayInputStream(bytes))
     val count = din.readInt()
     val ids = (0 until count).map(_ => din.readInt()).toSeq
     din.close
     ids
+  }
+
+  private def readSeqSizeFromBytes(bytes: Array[Byte]): Int = {
+    val din = new DataInputStream(new ByteArrayInputStream(bytes))
+    val count = din.readInt()
+    din.close
+    count
   }
 
   /**

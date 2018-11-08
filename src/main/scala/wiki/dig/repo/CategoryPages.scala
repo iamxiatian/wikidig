@@ -5,6 +5,13 @@ import wiki.dig.repo.core.Repo
 import scala.concurrent.Future
 
 
+/**
+  * 分类ID到拥有的维基文章(Page)之间的关系。注意： category_pages的主键是类别的id，
+  * pages是Page，但表page_categories中，id是page的id，pages字段则是category的id
+  *
+  * @param id
+  * @param pageId
+  */
 case class CategoryPage(id: Int,
                         pageId: Int)
 

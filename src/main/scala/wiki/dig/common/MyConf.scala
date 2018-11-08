@@ -47,12 +47,13 @@ object MyConf {
 
   def wikiDbPassword = config.getString("wiki.db.mysql.password")
 
+  lazy val dbRootDir = new File(config.getString("dig.db.root.dir"))
 
   val screenConfigText: String = {
     s"""
        |My configuration(build: ${BuildInfo.builtAtString}):
-       |├── master config:
-       |│   ├── hostname ==> xxxx
+       |├── dig db:
+       |│   ├── root path ==> ${dbRootDir.getCanonicalPath}
        |│   ├── port ==> 7000
        |│   └── API http port ==> ssss
        |│
