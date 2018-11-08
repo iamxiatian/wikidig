@@ -7,7 +7,11 @@ import com.google.common.collect.Lists
 import org.rocksdb._
 import org.slf4j.LoggerFactory
 import wiki.dig.db.ast.Db
+import wiki.dig.repo.CategoryRepo
 import wiki.dig.util.ByteUtil
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 object CategoryDb extends Db {
   val LOG = LoggerFactory.getLogger(this.getClass)
@@ -70,14 +74,31 @@ object CategoryDb extends Db {
     Option(db.get(name2idHandler, nameBytes)).map(ByteUtil.bytes2Int)
   }
 
+  def build() = {
+    val pageSize = 10000
+    val count = Await.result(CategoryRepo.count(), Duration.Inf)
+    val pages = count / pageSize + 1
+    (1 to pages) foreach {
+      page =>
+        println(s"process $page / $pages ...")
+        val categories = Await.result(CategoryRepo.list(page, pageSize), Duration.Inf)
+
+        categories.foreach(c => save(c.id, c.name))
+    }
+
+    println("DONE")
+  }
+
   /**
     * 数据库名字
     */
   def dbName: String = "Category DB"
 
   override def close(): Unit = {
+    print(s"==> Close Category Db ... ")
     id2nameHandler.close()
     name2idHandler.close()
     db.close()
+    println("DONE.")
   }
 }

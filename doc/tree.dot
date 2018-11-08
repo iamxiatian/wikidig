@@ -1,0 +1,14 @@
+digraph g {
+  fontname = "Microsoft Yahei"
+  graph [ordering="out"];
+  margin=0;
+
+  c11 -> {c21, c22, c23};
+  c12 -> {c22, c23, c24};
+
+  more[label="..."]
+  c21 -> {c31, c32,c33};
+  c22 -> {c31, c33, c34, more}
+  c23 -> more;
+  c24 -> more;
+}

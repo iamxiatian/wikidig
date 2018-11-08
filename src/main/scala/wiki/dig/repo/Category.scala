@@ -1,16 +1,21 @@
 package wiki.dig.repo
 
-import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
+import java.util.concurrent.LinkedBlockingQueue
 
 import wiki.dig.repo.core.Repo
 
-import scala.collection.mutable
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 
-
-case class Category(id: Long,
+/**
+  * 经过观察数据库，发现id和pageId对于Category数据是一样的。即二者完全相同
+  *
+  * @param id
+  * @param pageId
+  * @param name
+  */
+case class Category(id: Int,
                     pageId: Int,
                     name: String)
 
@@ -21,7 +26,7 @@ object CategoryRepo extends Repo[Category] {
   class CategoryTable(tag: Tag) extends
     Table[Category](tag, "Category") {
 
-    def id = column[Long]("id", O.PrimaryKey)
+    def id = column[Int]("id", O.PrimaryKey)
 
     def pageId = column[Int]("pageId")
 
@@ -40,6 +45,14 @@ object CategoryRepo extends Repo[Category] {
     entities.filter(_.id.inSet(ids.toSet)).result
   }
 
+  def list(page: Int, limit: Int): Future[Seq[Category]] = db run {
+    entities.drop((page - 1) * limit).take(limit).result
+  }
+
+  def count(): Future[Int] = db run {
+    entities.length.result
+  }
+
   /**
     * 根分类，对于英文来说，根的名称为Contents
     *
@@ -51,6 +64,7 @@ object CategoryRepo extends Repo[Category] {
 
   /**
     * 获取第一级有效的分类
+    *
     * @return
     */
   def levelOne(): Future[Seq[Category]] = root().flatMap {
@@ -67,7 +81,7 @@ object CategoryRepo extends Repo[Category] {
     val ones = Await.result(levelOne(), Duration.Inf)
     ones.foreach(q.add)
 
-    while(!q.isEmpty) {
+    while (!q.isEmpty) {
       val current = q.poll()
       //处理当前节点
 
