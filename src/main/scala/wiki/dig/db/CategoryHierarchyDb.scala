@@ -13,12 +13,15 @@ import wiki.dig.util.ByteUtil
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-object CategoryDb extends Db {
+/**
+  * wiki层级体系数据库，记录了层级之间的父子关系
+  */
+object CategoryHierarchyDb extends Db {
   val LOG = LoggerFactory.getLogger(this.getClass)
 
   import StandardCharsets.UTF_8
 
-  val dbPath = new File("./db/category/idname")
+  val dbPath = new File("./db/category/hierarchy")
   if (!dbPath.getParentFile.exists())
     dbPath.getParentFile.mkdirs()
 
@@ -101,4 +104,8 @@ object CategoryDb extends Db {
     db.close()
     println("DONE.")
   }
+}
+
+case class CValue(depth: Int, inlinks: List[Int], outlinks: List[Int]) {
+
 }
