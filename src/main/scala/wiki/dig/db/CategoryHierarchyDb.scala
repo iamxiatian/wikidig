@@ -89,7 +89,7 @@ object CategoryHierarchyDb extends Db {
 
       val key = ByteUtil.int2bytes(cid)
 
-      if (!db.keyMayExist(key, sb)) {
+      if (getCNode(cid).isEmpty) {
         counter += 1
         if (counter % 1000 == 0) {
           println(s"processing $counter, queue size: ${queue.size}")
@@ -114,13 +114,18 @@ object CategoryHierarchyDb extends Db {
           outlinks.foreach(id => queue.enqueue((id, depth + 1)))
         }
       } else {
-        println(s"$cid / $depth")
+        //println(s"$cid / $depth")
+        println(".")
       }
     }
 
     db.put(metaHandler, "TotalWeight".getBytes(UTF_8), ByteUtil.long2bytes(totalWeight))
     println("DONE")
   }
+
+  def getCNode(cid: Int): Option[CNode] = Option(
+    db.get(ByteUtil.int2bytes(cid))
+  ) map readCNode
 
   def getTotalWeight(): Long = Option(
     db.get(metaHandler, "TotalWeight".getBytes(UTF_8))
