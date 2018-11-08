@@ -115,7 +115,7 @@ object CategoryHierarchyDb extends Db {
         }
       } else {
         //println(s"$cid / $depth")
-        println(".")
+        print(".")
       }
     }
 
