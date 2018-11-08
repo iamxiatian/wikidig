@@ -106,6 +106,10 @@ object CategoryHierarchyDb extends Db {
   }
 }
 
-case class CValue(depth: Int, inlinks: List[Int], outlinks: List[Int]) {
+case class CNode(depth: Int,
+                  inlinks: List[Int],
+                 outlinks: List[Int],
+
+                ) {
 
 }
