@@ -83,7 +83,6 @@ object CategoryHierarchyDb extends Db {
 
     startNodes.foreach(println)
 
-    val sb = new java.lang.StringBuilder()
     while (queue.nonEmpty) {
       val (cid, depth) = queue.dequeue()
 
@@ -100,7 +99,9 @@ object CategoryHierarchyDb extends Db {
             CategoryDb.getNameById(id) match {
               case Some(name) =>
                 accept(name)
-              case None => false
+              case None =>
+                println(s"no name error: $id")
+                false
             }
         }
         val weights = outlinks.map(CategoryDb.getLinkedCount(_))

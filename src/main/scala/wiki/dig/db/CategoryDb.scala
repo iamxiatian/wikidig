@@ -55,9 +55,9 @@ object CategoryDb extends Db {
 
   protected val id2nameHandler: ColumnFamilyHandle = cfHandlers.get(0)
   protected val name2idHandler: ColumnFamilyHandle = cfHandlers.get(1)
-  protected val inlinksHandler: ColumnFamilyHandle = cfHandlers.get(1)
-  protected val outlinksHandler: ColumnFamilyHandle = cfHandlers.get(1)
-  protected val pagesHandler: ColumnFamilyHandle = cfHandlers.get(1)
+  protected val inlinksHandler: ColumnFamilyHandle = cfHandlers.get(2)
+  protected val outlinksHandler: ColumnFamilyHandle = cfHandlers.get(3)
+  protected val pagesHandler: ColumnFamilyHandle = cfHandlers.get(4)
 
   def build() = {
     val pageSize = 5000
