@@ -10,7 +10,7 @@ lazy val root = (project in file(".")).
   enablePlugins(BuildInfoPlugin).
   settings(
     buildInfoKeys := BuildInfoKey.ofN(name, version, scalaVersion, sbtVersion),
-    buildInfoPackage := "wiki.digger.common"
+    buildInfoPackage := "wiki.dig.common"
   )
 
 buildInfoKeys ++= Seq[BuildInfoKey](
