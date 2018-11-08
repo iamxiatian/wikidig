@@ -77,6 +77,8 @@ object CategoryHierarchyDb extends Db {
 
     var totalWeight: Long = 0L
 
+    var counter = 0
+
     startNodes.foreach(id => queue.enqueue((id, 1)))
 
     val sb = new java.lang.StringBuilder()
@@ -86,6 +88,10 @@ object CategoryHierarchyDb extends Db {
       val key = ByteUtil.int2bytes(cid)
 
       if (!db.keyMayExist(key, sb)) {
+        counter += 1
+        if (counter % 1000 == 0) {
+          println(s"processing $counter, queue size: ${queue.size}")
+        }
         //之前没有保存过，已保证保存的depth最小。
         val outlinks = CategoryDb.getOutlinks(cid).filter {
           id =>
