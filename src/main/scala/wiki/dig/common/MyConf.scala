@@ -41,13 +41,11 @@ object MyConf {
 
   def getBoolean(path: String) = config.getBoolean(path)
 
-  def wikiDbHost = config.getString("wiki.db.host")
+  def wikiDbUrl = config.getString("wiki.db.mysql.url")
 
-  def wikiDbName = config.getString("wiki.db.name")
+  def wikiDbUser = config.getString("wiki.db.mysql.user")
 
-  def wikiDbUser = config.getString("wiki.db.user")
-
-  def wikiDbPassword = config.getString("wiki.db.password")
+  def wikiDbPassword = config.getString("wiki.db.mysql.password")
 
 
   val screenConfigText: String = {
@@ -59,9 +57,9 @@ object MyConf {
        |│   └── API http port ==> ssss
        |│
        |├── mysql config:
-       |│   ├── host ==> $wikiDbHost
-       |│   ├── database ==> $wikiDbName
-       |│   └── user ==> $wikiDbUser
+       |│   ├── url ==> $wikiDbUrl
+       |│   ├── user ==> $wikiDbUser
+       |│   └── password ==> $wikiDbPassword
        |│
        |└── fetcher config:
        |    ├── fetcher identification ==> xxx

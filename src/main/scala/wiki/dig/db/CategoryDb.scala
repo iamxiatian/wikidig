@@ -41,7 +41,7 @@ object CategoryDb extends Db {
     .setCreateMissingColumnFamilies(true)
 
   protected val cfNames = Lists.newArrayList[ColumnFamilyDescriptor](
-    new ColumnFamilyDescriptor("id2name".getBytes(UTF_8)),
+    new ColumnFamilyDescriptor("default".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("name2id".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("inlinks".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("outlinks".getBytes(UTF_8)),
