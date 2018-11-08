@@ -1,6 +1,7 @@
 package wiki.dig.util
 
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 
 /**
   * 字节处理的工具类，包括字节和十六进制字符串的转换，各种数字类型与字节数组的转换
@@ -26,6 +27,14 @@ object ByteUtil {
   def bytes2float(bytes: Array[Byte]): Float = ByteBuffer.wrap(bytes).getFloat
 
   def bytes2double(bytes: Array[Byte]): Double = ByteBuffer.wrap(bytes).getDouble
+
+  def bytes2string(bytes: Array[Byte]): String = if (bytes == null)
+    null
+  else
+    new String(bytes, StandardCharsets.UTF_8)
+
+  def string2bytes(s: String): Array[Byte] = s.getBytes(StandardCharsets.UTF_8)
+
 
   def example {
     val data = "48 65 6C 6C 6F 20 57 6F 72 6C 64 21 21"

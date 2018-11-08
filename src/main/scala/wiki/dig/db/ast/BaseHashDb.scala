@@ -1,4 +1,4 @@
-package wiki.dig.repo.ast
+package wiki.dig.db.ast
 
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
@@ -16,7 +16,7 @@ import scala.util.{Failure, Success, Try}
   * @param dbName 用于显示使用的数据库的名称
   * @param dbPath 数据库的存储位置
   */
-abstract class BaseDb(val dbName: String, val dbPath: File) extends Db {
+abstract class BaseHashDb(val dbName: String, val dbPath: File) extends Db {
   protected val LOG = LoggerFactory.getLogger(this.getClass)
 
   protected val options = new DBOptions()
@@ -38,7 +38,7 @@ abstract class BaseDb(val dbName: String, val dbPath: File) extends Db {
   protected val defaultHandler: ColumnFamilyHandle = cfHandlers.get(0)
   protected val metaHandler: ColumnFamilyHandle = cfHandlers.get(1)
 
-  def open(): Unit = {
+  override def open(): Unit = {
     println(s"open DB $dbName with count: ${numKeys()}")
   }
 

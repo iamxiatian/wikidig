@@ -1,4 +1,4 @@
-package wiki.dig.repo.core
+package wiki.dig.db.ast
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -56,7 +56,6 @@ class KeyValueDb(name: String, dbFile: File, readOnly: Boolean = false) {
 
   def close = {
     db.close()
-
   }
 
   def get(k: Array[Byte]): Option[Array[Byte]] = {

@@ -1,4 +1,6 @@
-package wiki.dig.repo.ast
+package wiki.dig.db.ast
+
+import java.nio.charset.StandardCharsets
 
 import scala.util.Try
 
@@ -6,7 +8,8 @@ import scala.util.Try
   * 数据库特质
   */
 trait Db {
-  def open()
+
+  def open() = {}
 
   def close()
 

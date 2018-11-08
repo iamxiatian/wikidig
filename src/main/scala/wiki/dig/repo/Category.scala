@@ -1,8 +1,13 @@
 package wiki.dig.repo
 
+import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
+
 import wiki.dig.repo.core.Repo
 
-import scala.concurrent.Future
+import scala.collection.mutable
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
+
 
 
 case class Category(id: Long,
@@ -56,6 +61,19 @@ object CategoryRepo extends Repo[Category] {
     case None => Future.successful(Seq.empty[Category])
   }
 
+  def process() = {
+    val q = new LinkedBlockingQueue[Category]()
+
+    val ones = Await.result(levelOne(), Duration.Inf)
+    ones.foreach(q.add)
+
+    while(!q.isEmpty) {
+      val current = q.poll()
+      //处理当前节点
+
+
+    }
+  }
 
 
 }

@@ -1,4 +1,4 @@
-package wiki.dig.repo.ast
+package wiki.dig.db.ast
 
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Arrays
@@ -8,7 +8,7 @@ import com.google.common.collect.Lists
 import com.google.common.primitives.Longs
 import org.rocksdb._
 import org.slf4j.LoggerFactory
-import wiki.dig.repo.ast.ScoreUpdate._
+import ScoreUpdate._
 
 import scala.util.Try
 
@@ -278,10 +278,6 @@ class SortedSetDb(dbName: String, //数据库的别名，方便调试和日志�
 
     // 删除keyScore列
     db.delete(keyScoreHandler, key)
-  }
-
-  def open() = {
-
   }
 
   def close() = {

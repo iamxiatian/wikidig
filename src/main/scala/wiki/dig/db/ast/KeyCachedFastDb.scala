@@ -1,4 +1,4 @@
-package wiki.dig.repo.ast
+package wiki.dig.db.ast
 
 import org.rocksdb.{Options, RocksDB, RocksIterator}
 import org.zhinang.util.cache.LruCache
@@ -127,7 +127,7 @@ class KeyCachedFastDb(path: String, cacheSize: Int = 2000) extends Db {
     this
   }
 
-  def open() = {
+  override def open() = {
     println(s"open board db with count: ${numKeys()}")
   }
 

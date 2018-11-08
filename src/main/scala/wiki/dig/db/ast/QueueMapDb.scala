@@ -1,4 +1,4 @@
-package wiki.dig.repo.ast
+package wiki.dig.db.ast
 
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicInteger

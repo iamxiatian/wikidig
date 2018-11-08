@@ -1,4 +1,4 @@
-package wiki.dig.repo.ast
+package wiki.dig.db.ast
 
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicInteger
@@ -53,7 +53,7 @@ class QueueListDb(path: String,
       new AtomicInteger(Ints.fromByteArray(value))
   }
 
-  def open() =
+  override def open() =
     println(s"Successfully open db $path")
 
   /**
