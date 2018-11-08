@@ -81,6 +81,8 @@ object CategoryHierarchyDb extends Db {
 
     startNodes.foreach(id => queue.enqueue((id, 1)))
 
+    startNodes.foreach(println)
+
     val sb = new java.lang.StringBuilder()
     while (queue.nonEmpty) {
       val (cid, depth) = queue.dequeue()
@@ -111,6 +113,8 @@ object CategoryHierarchyDb extends Db {
         if (depth <= Max_Depth) {
           outlinks.foreach(id => queue.enqueue((id, depth + 1)))
         }
+      } else {
+        println(s"$cid / $depth")
       }
     }
 
