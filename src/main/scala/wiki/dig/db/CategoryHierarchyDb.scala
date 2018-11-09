@@ -217,7 +217,7 @@ object CategoryHierarchyDb extends Db {
                   val y = next(x)
 
                   //output (cid, x, y)
-                  val line = s"${CategoryDb.getNameById(cid)}, ${CategoryDb.getNameById(x)}, ${CategoryDb.getNameById(y)}\n"
+                  val line = s"${CategoryDb.getNameById(cid).getOrElse("")}, ${CategoryDb.getNameById(x).getOrElse("")}, ${CategoryDb.getNameById(y).getOrElse("")}\n"
                   writer.write(line)
                   if (counter % 100 == 0) writer.flush()
                 }
