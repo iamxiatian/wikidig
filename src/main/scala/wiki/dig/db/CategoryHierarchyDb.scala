@@ -232,10 +232,9 @@ object CategoryHierarchyDb extends Db {
           //Error
           print("X")
       }
-
-      writer.close()
     }
 
+    writer.close()
   }
 
   /**
