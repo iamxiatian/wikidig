@@ -50,6 +50,7 @@ object MyConf {
   lazy val dbRootDir = new File(config.getString("dig.db.root.dir"))
 
   lazy val categoryDbReadOnly = config.getBoolean("dig.db.category.readonly")
+  lazy val pageDbReadOnly = config.getBoolean("dig.db.page.readonly")
 
   val screenConfigText: String = {
     s"""
@@ -57,6 +58,7 @@ object MyConf {
        |├── dig db:
        |│   ├── root path ==> ${dbRootDir.getCanonicalPath}
        |│   ├── category db readonly ==> $categoryDbReadOnly
+       |│   ├── page db readonly ==> $pageDbReadOnly
        |│   └── API http port ==> ssss
        |│
        |├── mysql config:

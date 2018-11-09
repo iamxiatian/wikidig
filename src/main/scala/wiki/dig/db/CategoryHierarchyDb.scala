@@ -64,6 +64,7 @@ object CategoryHierarchyDb extends Db {
     //step 2: remove "list of xxxx" and "index of xxx"
     if (title.indexOf("index of ") >= 0 ||
       title.indexOf("list of") >= 0 ||
+      title.indexOf("lists of") >= 0 || //新增加
       title.indexOf("(disambiguation)") >= 0) return false
 
     //以年份结尾的词条，符合年份时代结尾的形式文章，如``China national football team results (2000–09)''，因为这类文章的作用更类似于类别，起到信息组织的作用。
