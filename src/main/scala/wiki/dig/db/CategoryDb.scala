@@ -200,4 +200,10 @@ object CategoryDb extends Db {
     db.close()
     println("DONE.")
   }
+
+  def main(args: Array[String]): Unit = {
+    val id = CategoryDb.getIdByName("Culture")
+    println(id)
+    CategoryDb.close()
+  }
 }

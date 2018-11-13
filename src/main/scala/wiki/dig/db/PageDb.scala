@@ -17,7 +17,8 @@ import scala.concurrent.duration.Duration
 /**
   * 把Page的信息保存到RocksDB数据库中，里面记录的信息包括：
   *
-  * Page的id:name双向映射关系，来自于数据库的Page
+  * Page的id:name双向映射关系，来自于数据库的Page. 由于有别名的存在，一个ID会对应到一个
+  * 标准的词条名称上，但是有多个名称（规范的和非规范的）映射到一个id上。
   *
   * 页面的入链，来自于page_inlinks
   *
@@ -180,14 +181,14 @@ object PageDb extends Db {
     val din = new DataInputStream(new ByteArrayInputStream(bytes))
     val count = din.readInt()
     val ids = (0 until count).map(_ => din.readInt()).toSeq
-    din.close
+    din.close()
     ids
   }
 
   private def readSeqSizeFromBytes(bytes: Array[Byte]): Int = {
     val din = new DataInputStream(new ByteArrayInputStream(bytes))
     val count = din.readInt()
-    din.close
+    din.close()
     count
   }
 

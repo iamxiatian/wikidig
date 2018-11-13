@@ -1,4 +1,4 @@
-name := "wikidigger"
+name := "wikidig"
 version := "0.1"
 
 scalaVersion := "2.12.3"
@@ -137,7 +137,8 @@ initialCommands in console +=
     |import scala.collection.JavaConverters._
     |import akka.actor._
     |import akka.routing._
-    |import wiki.digger.repo._
+    |import wiki.dig.repo._
+    |import wiki.dig.db._
     |
   """.stripMargin
 
