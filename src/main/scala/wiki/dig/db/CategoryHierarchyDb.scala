@@ -159,6 +159,49 @@ object CategoryHierarchyDb extends Db {
   }
 
   /**
+    * 入口类别的ID，位于“Main topic classification"下，入口类别有：
+    * {{{
+    * +----------|----------|------------------------+
+    * | id | pageId | name |
+    * +----------|----------|------------------------+
+    * |   690747 |   690747 | Mathematics            |
+    * |   691008 |   691008 | People                 |
+    * |   691810 |   691810 | Philosophy             |
+    * |   691928 |   691928 | Law                    |
+    * |   692694 |   692694 | Religion               |
+    * |   693555 |   693555 | History                |
+    * |   693708 |   693708 | Sports                 |
+    * |   693800 |   693800 | Geography              |
+    * |   694861 |   694861 | Culture                |
+    * |   695027 |   695027 | Politics               |
+    * |   696603 |   696603 | Nature                 |
+    * |   696763 |   696763 | Education              |
+    * |   722196 |   722196 | Reference              |
+    * |   751381 |   751381 | Health                 |
+    * |  1004110 |  1004110 | Humanities             |
+    * |  1633936 |  1633936 | Society                |
+    * |  2389032 |  2389032 | Life                   |
+    * |  2766046 |  2766046 | Events                 |
+    * |  3260154 |  3260154 | World                  |
+    * |  4892515 |  4892515 | Arts                   |
+    * |  8017451 |  8017451 | Language               |
+    * | 47642171 | 47642171 | Science_and_technology |
+    * | 48005914 | 48005914 | Universe               |
+    * +----------|----------|------------------------+
+    * }}}
+    *
+    */
+  val startNodeIds: Seq[Int] = {
+    //如果从MySQL数据库中读取，则用底下注释的语句
+    //Await.result(CategoryRepo.levelOne(), Duration.Inf).map(_.id)
+
+    //为了避免连接MySQL，直接把ID写到如下的列表中
+    List(690747, 691008, 691810, 691928, 692694, 693555, 693708, 693800,
+      694861, 695027, 696603, 696763, 722196, 751381, 1004110, 1633936,
+      2389032, 2766046, 3260154, 4892515, 8017451, 47642171, 48005914)
+  }
+
+  /**
     * 抽样n个三角形
     *
     * @param n
@@ -169,14 +212,11 @@ object CategoryHierarchyDb extends Db {
     val writer = Files.newWriter(new File("./triangle.txt"), UTF_8)
 
     //在每个节点上按比例抽样。
-    val startNodes = Await.result(CategoryRepo.levelOne(), Duration.Inf).map(_.id)
     val queue = mutable.Queue.empty[(Int, Int)]
 
     var counter = 0
 
-    startNodes.foreach(id => queue.enqueue((id, 1)))
-
-    startNodes.foreach(println)
+    startNodeIds.foreach(id => queue.enqueue((id, 1)))
 
     println(s"total weight: $totalWeight")
 
@@ -256,6 +296,16 @@ object CategoryHierarchyDb extends Db {
           false
         }
     }.map(_._1).getOrElse(outlinks.head)
+  }
+
+  def main(args: Array[String]): Unit = {
+    println("Test start entries:")
+    startNodeIds.foreach {
+      cid =>
+        val node = getCNode(cid)
+        println(s"$cid \t ${CategoryDb.getNameById(cid).get} \t ${node.get}")
+    }
+    close()
   }
 }
 
