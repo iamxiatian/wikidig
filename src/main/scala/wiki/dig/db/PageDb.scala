@@ -165,7 +165,7 @@ object PageDb extends Db {
   }
 
   def getCategories(id: Int): Seq[Int] = Option(
-    db.get(categoryHandler, ByteUtil.int2bytes(cid))
+    db.get(categoryHandler, ByteUtil.int2bytes(id))
   ) match {
     case Some(bytes) => readSeqFromBytes(bytes)
     case None => Seq.empty
