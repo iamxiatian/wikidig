@@ -5,7 +5,7 @@ import wiki.dig.repo.core.Repo
 import scala.concurrent.Future
 
 
-case class Page(id: Long,
+case class Page(id: Int,
                 pageId: Int,
                 name: String,
                 text: String,
@@ -18,7 +18,7 @@ object PageRepo extends Repo[Page] {
   class PageTable(tag: Tag) extends
     Table[Page](tag, "Page") {
 
-    def id = column[Long]("id", O.PrimaryKey)
+    def id = column[Int]("id", O.PrimaryKey)
 
     def pageId = column[Int]("pageId")
 
@@ -41,4 +41,11 @@ object PageRepo extends Repo[Page] {
     pages.filter(_.name === name).result.headOption
   }
 
+  def count(): Future[Int] = db run {
+    pages.length.result
+  }
+
+  def list(page: Int, limit: Int): Future[Seq[Page]] = db run {
+    pages.drop((page - 1) * limit).take(limit).result
+  }
 }

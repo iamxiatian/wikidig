@@ -1,7 +1,7 @@
 package wiki.dig
 
 import wiki.dig.common.{BuildInfo, MyConf}
-import wiki.dig.db.{CategoryDb, CategoryHierarchyDb}
+import wiki.dig.db.{CategoryDb, CategoryHierarchyDb, PageDb}
 
 /**
   * Application Start
@@ -11,6 +11,7 @@ object Start extends App {
   case class Config(
                      buildCategoryPairs: Boolean = false,
                      buildHierarchy: Boolean = false,
+                     buildPageDb: Boolean = false,
                      sample: Option[Int] = None
                    )
 
@@ -26,6 +27,9 @@ object Start extends App {
 
     opt[Unit]("buildHierarchy").action((_, c) =>
       c.copy(buildHierarchy = true)).text("build category Hierarchy to rocksdb.")
+
+    opt[Unit]("buildPageDb").action((_, c) =>
+      c.copy(buildPageDb = true)).text("build page db with rocksdb format.")
 
     opt[Int]('s', "sample").optional().
       action((x, c) => c.copy(sample = Some(x))).
@@ -50,9 +54,15 @@ object Start extends App {
         CategoryHierarchyDb.close()
       }
 
-      if(config.sample.nonEmpty) {
+      if (config.sample.nonEmpty) {
         val n = config.sample.get
         CategoryHierarchyDb.sample(n)
+      }
+
+      if (config.buildPageDb) {
+        println("build page db ...")
+        PageDb.build()
+        PageDb.close()
       }
     case None => {
       println( """Wrong parameters :(""".stripMargin)

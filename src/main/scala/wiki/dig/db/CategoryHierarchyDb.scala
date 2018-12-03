@@ -202,6 +202,50 @@ object CategoryHierarchyDb extends Db {
   }
 
   /**
+    * 按照如下方式把层级信息输出到文本文件中：
+    * cate_id  cate_name cate_level cate1_id cate2_id cate3_id cate4_id
+    *
+    * @param f
+    */
+  def output(f: File) = {
+    val writer = Files.newWriter(f, UTF_8)
+    val queue = mutable.Queue.empty[(Int, Int)]
+    startNodeIds.foreach(id => queue.enqueue((id, 1)))
+
+    var counter = 0
+    while (queue.nonEmpty) {
+      val (cid, depth) = queue.dequeue()
+
+      val key = ByteUtil.int2bytes(cid)
+
+      getCNode(cid) match {
+        case Some(node) =>
+          counter += 1
+          if (counter % 1000 == 0) {
+            println(s"processing $counter, queue size: ${queue.size}")
+            writer.flush()
+          }
+          val name = CategoryDb.getNameById(cid).getOrElse("")
+          val outlinks = node.outlinks
+          writer.write(s"$cid, ${name}, ${node.depth}, ")
+          writer.write(outlinks.mkString(", "))
+          writer.write("\n")
+
+          //继续后续抽样处理
+          if (depth <= Max_Depth) {
+            outlinks.foreach(id => queue.enqueue((id, depth + 1)))
+          }
+        case None =>
+          //Error
+          print("X")
+      }
+    }
+
+    writer.close()
+    println(s"DONE to file ${f.getCanonicalPath}")
+  }
+
+  /**
     * 抽样n个三角形
     *
     * @param n
@@ -299,13 +343,7 @@ object CategoryHierarchyDb extends Db {
   }
 
   def main(args: Array[String]): Unit = {
-    println("Test start entries:")
-    startNodeIds.foreach {
-      cid =>
-        val node = getCNode(cid)
-        println(s"$cid \t ${CategoryDb.getNameById(cid).get} \t ${node.get}")
-    }
-    close()
+    output(new File("./categories.txt"))
   }
 }
 

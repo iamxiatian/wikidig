@@ -6,9 +6,10 @@ import java.nio.charset.StandardCharsets
 import com.google.common.collect.Lists
 import org.rocksdb._
 import org.slf4j.LoggerFactory
+import org.zhinang.util.GZipUtils
 import wiki.dig.common.MyConf
 import wiki.dig.db.ast.Db
-import wiki.dig.repo.{CategoryInlinkRepo, CategoryOutlinkRepo, CategoryPageRepo, CategoryRepo}
+import wiki.dig.repo._
 import wiki.dig.util.ByteUtil
 
 import scala.concurrent.Await
@@ -47,9 +48,11 @@ object PageDb extends Db {
   protected val cfNames = Lists.newArrayList[ColumnFamilyDescriptor](
     new ColumnFamilyDescriptor("default".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("name2id".getBytes(UTF_8)),
+    new ColumnFamilyDescriptor("disambiguation".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("inlinks".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("outlinks".getBytes(UTF_8)),
-    new ColumnFamilyDescriptor("pages".getBytes(UTF_8))
+    new ColumnFamilyDescriptor("category".getBytes(UTF_8)),
+    new ColumnFamilyDescriptor("content".getBytes(UTF_8))
   )
 
   protected val cfHandlers = Lists.newArrayList[ColumnFamilyHandle]
@@ -58,25 +61,35 @@ object PageDb extends Db {
 
   protected val id2nameHandler: ColumnFamilyHandle = cfHandlers.get(0)
   protected val name2idHandler: ColumnFamilyHandle = cfHandlers.get(1)
-  protected val inlinksHandler: ColumnFamilyHandle = cfHandlers.get(2)
-  protected val outlinksHandler: ColumnFamilyHandle = cfHandlers.get(3)
-  protected val pagesHandler: ColumnFamilyHandle = cfHandlers.get(4)
+  protected val disambiHandler: ColumnFamilyHandle = cfHandlers.get(2)
+  protected val inlinksHandler: ColumnFamilyHandle = cfHandlers.get(3)
+  protected val outlinksHandler: ColumnFamilyHandle = cfHandlers.get(4)
+  protected val categoryHandler: ColumnFamilyHandle = cfHandlers.get(5)
+  protected val contentHandler: ColumnFamilyHandle = cfHandlers.get(6)
+
 
   def build() = {
     val pageSize = 5000
-    val count = Await.result(CategoryRepo.count(), Duration.Inf)
-    val pages = count / pageSize + 1
-    (1 to pages) foreach {
-      page =>
-        println(s"process $page / $pages ...")
-        val categories = Await.result(CategoryRepo.list(page, pageSize), Duration.Inf)
+    val count = Await.result(PageRepo.count(), Duration.Inf)
+    val pageNum = count / pageSize + 1
+    (1 to pageNum) foreach {
+      p =>
+        println(s"process $p / $pageNum ...")
+        val pages = Await.result(PageRepo.list(p, pageSize), Duration.Inf)
 
-        categories.foreach {
-          c =>
-            saveIdName(c.id, c.name)
-            saveInlinks(c.id)
-            saveOutlinks(c.id)
-            savePages(c.id)
+        pages.foreach {
+          page =>
+            saveIdName(page.id, page.name)
+            saveInlinks(page.id)
+            saveOutlinks(page.id)
+
+            //只记录是消歧义的页面，其他情况默认为非歧义页面
+            if (page.isDisambiguation) {
+              saveDisambiguation(page.id)
+            }
+
+            saveCategories(page.id)
+            saveContent(page.id, page.text)
         }
     }
 
@@ -84,16 +97,14 @@ object PageDb extends Db {
   }
 
   /**
-    * 获取当前分类的入链，出链，和页面数量之和
+    * 获取当前页面的入链和出链之和
     */
   def getLinkedCount(cid: Int): Int = {
-    getInlinkCount(cid).getOrElse(0) +
-      getOutlinkCount(cid).getOrElse(0) +
-      getPageCount(cid).getOrElse(0)
+    getInlinkCount(cid).getOrElse(0) + getOutlinkCount(cid).getOrElse(0)
   }
 
   /**
-    * 创建类别的ID和名称的双向映射，方便根据ID查名称，或者根据名称查ID
+    * 创建ID和名称的双向映射，方便根据ID查名称，或者根据名称查ID
     */
   private def saveIdName(id: Int, name: String): Unit = {
     val idBytes = ByteUtil.int2bytes(id)
@@ -111,7 +122,7 @@ object PageDb extends Db {
   ).map(ByteUtil.bytes2Int)
 
   private def saveInlinks(cid: Int) = {
-    val links = Await.result(CategoryInlinkRepo.findInlinksById(cid), Duration.Inf)
+    val links = Await.result(PageInlinkRepo.findInlinksById(cid), Duration.Inf)
     val key = ByteUtil.int2bytes(cid)
     val value = getBytesFromSeq(links)
     db.put(inlinksHandler, key, value)
@@ -124,45 +135,84 @@ object PageDb extends Db {
     case None => Seq.empty
   }
 
-  def getInlinkCount(cid: Int): Option[Int] = Option(
-    db.get(inlinksHandler, ByteUtil.int2bytes(cid))
+  def getInlinkCount(id: Int): Option[Int] = Option(
+    db.get(inlinksHandler, ByteUtil.int2bytes(id))
   ).map(readSeqSizeFromBytes)
 
-  private def saveOutlinks(cid: Int) = {
-    val links = Await.result(CategoryOutlinkRepo.findOutlinksById(cid), Duration.Inf)
-    val key = ByteUtil.int2bytes(cid)
+  private def saveOutlinks(id: Int) = {
+    val links = Await.result(PageOutlinkRepo.findOutlinksById(id), Duration.Inf)
+    val key = ByteUtil.int2bytes(id)
     val value = getBytesFromSeq(links)
     db.put(outlinksHandler, key, value)
   }
 
-  def getOutlinks(cid: Int): Seq[Int] = Option(
-    db.get(outlinksHandler, ByteUtil.int2bytes(cid))
+  def getOutlinks(id: Int): Seq[Int] = Option(
+    db.get(outlinksHandler, ByteUtil.int2bytes(id))
   ) match {
     case Some(bytes) => readSeqFromBytes(bytes)
     case None => Seq.empty
   }
 
-  def getOutlinkCount(cid: Int): Option[Int] = Option(
-    db.get(outlinksHandler, ByteUtil.int2bytes(cid))
+  def getOutlinkCount(id: Int): Option[Int] = Option(
+    db.get(outlinksHandler, ByteUtil.int2bytes(id))
   ).map(readSeqSizeFromBytes)
 
-  private def savePages(cid: Int) = {
-    val pageIds = Await.result(CategoryPageRepo.findPagesById(cid), Duration.Inf)
-    val key = ByteUtil.int2bytes(cid)
-    val value = getBytesFromSeq(pageIds)
-    db.put(pagesHandler, key, value)
+  private def saveCategories(id: Int) = {
+    val ids = Await.result(PageCategoryRepo.findCategoriesById(id), Duration.Inf)
+    val key = ByteUtil.int2bytes(id)
+    val value = getBytesFromSeq(ids)
+    db.put(categoryHandler, key, value)
   }
 
-  def getPages(cid: Int): Seq[Int] = Option(
-    db.get(pagesHandler, ByteUtil.int2bytes(cid))
+  def getCategories(id: Int): Seq[Int] = Option(
+    db.get(categoryHandler, ByteUtil.int2bytes(cid))
   ) match {
     case Some(bytes) => readSeqFromBytes(bytes)
     case None => Seq.empty
   }
 
-  def getPageCount(cid: Int): Option[Int] = Option(
-    db.get(pagesHandler, ByteUtil.int2bytes(cid))
+  def getCategoryCount(id: Int): Option[Int] = Option(
+    db.get(categoryHandler, ByteUtil.int2bytes(id))
   ).map(readSeqSizeFromBytes)
+
+
+  /**
+    * 记录id为消歧义页面
+    *
+    * @param id
+    */
+  private def saveDisambiguation(id: Int): Unit = {
+    val key = ByteUtil.int2bytes(id)
+    val value: Array[Byte] = Array(1)
+    db.put(disambiHandler, key, value)
+  }
+
+  /**
+    * 判断id是否为消歧义页面
+    *
+    * @param id
+    * @return
+    */
+  def isDisambiguation(id: Int): Boolean = {
+    val key = ByteUtil.int2bytes(id)
+    db.get(disambiHandler, key) != null
+  }
+
+  private def saveContent(id: Int, content: String) = {
+    val key = ByteUtil.int2bytes(id)
+    val value = GZipUtils.compress(content.getBytes(UTF_8))
+    db.put(contentHandler, key, value)
+  }
+
+  def getContent(id: Int): Option[String] = Option(
+    db.get(contentHandler, ByteUtil.int2bytes(id))
+  ) match {
+    case Some(bytes) =>
+      val unzipped = GZipUtils.decompress(bytes)
+      Option(new String(unzipped, UTF_8))
+
+    case None => None
+  }
 
   private def getBytesFromSeq(ids: Seq[Int]): Array[Byte] = {
     val out = new ByteArrayOutputStream()
@@ -195,10 +245,10 @@ object PageDb extends Db {
   /**
     * 数据库名字
     */
-  def dbName: String = "Category DB"
+  def dbName: String = "Page DB"
 
   override def close(): Unit = {
-    print(s"==> Close Category Db ... ")
+    print(s"==> Close Page Db ... ")
     cfHandlers.forEach(h => h.close())
     db.close()
     println("DONE.")
