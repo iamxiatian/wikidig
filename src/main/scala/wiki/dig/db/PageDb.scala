@@ -69,7 +69,7 @@ object PageDb extends Db {
 
 
   def build() = {
-    val pageSize = 5000
+    val pageSize = 500
     val count = Await.result(PageRepo.count(), Duration.Inf)
     val pageNum = count / pageSize + 1
     (1 to pageNum) foreach {

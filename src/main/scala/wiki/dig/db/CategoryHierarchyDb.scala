@@ -226,14 +226,13 @@ object CategoryHierarchyDb extends Db {
             writer.flush()
           }
           val name = CategoryDb.getNameById(cid).getOrElse("")
-          val outlinks = node.outlinks
           writer.write(s"$cid, ${name}, ${node.depth}, ")
-          writer.write(outlinks.mkString(", "))
+          writer.write(node.outlinks.mkString(", "))
           writer.write("\n")
 
           //继续后续抽样处理
           if (depth <= Max_Depth) {
-            outlinks.foreach(id => queue.enqueue((id, depth + 1)))
+            node.outlinks.foreach(id => queue.enqueue((id, depth + 1)))
           }
         case None =>
           //Error
@@ -243,6 +242,62 @@ object CategoryHierarchyDb extends Db {
 
     writer.close()
     println(s"DONE to file ${f.getCanonicalPath}")
+  }
+
+  /**
+    * 按照如下方式把每个类别关联的文章ID集合输出到文本文件中：
+    * cate_id, page1 id, page2 id, ...
+    *
+    * @param f
+    */
+  def outputPageIds(cateogryPagesFile: File,
+                    pageIdsFile: File = new File("./page_all_ids.txt")) = {
+    println("Start to output page ids of each category")
+    val writer = Files.newWriter(cateogryPagesFile, UTF_8)
+
+    val pageIdSet = mutable.Set.empty[Int] //存放所有关联的网页ID
+    val queue = mutable.Queue.empty[(Int, Int)]
+    startNodeIds.foreach(id => queue.enqueue((id, 1)))
+    pageIdSet
+    var counter = 0
+    while (queue.nonEmpty) {
+      val (cid, depth) = queue.dequeue()
+
+      val key = ByteUtil.int2bytes(cid)
+
+      getCNode(cid) match {
+        case Some(node) =>
+          counter += 1
+          if (counter % 1000 == 0) {
+            println(s"processing $counter, queue size: ${queue.size}")
+          }
+
+          val pageIds = CategoryDb.getPages(cid)
+          pageIds.foreach { id => pageIdSet += id }
+
+          writer.write(s"$cid, ")
+          writer.write(pageIds.mkString(", "))
+          writer.write("\n")
+
+          if (depth <= Max_Depth) {
+            node.outlinks.foreach(id => queue.enqueue((id, depth + 1)))
+          }
+        case None =>
+          //Error
+          print("X")
+      }
+    }
+
+    writer.close()
+    println(s"DONE to file ${cateogryPagesFile.getCanonicalPath}")
+
+    val pageIdsWriter = Files.newWriter(pageIdsFile, UTF_8)
+    pageIdSet.foreach {
+      id =>
+        pageIdsWriter.write(id)
+        pageIdsWriter.write("\n")
+    }
+    println("DONE!")
   }
 
   /**
