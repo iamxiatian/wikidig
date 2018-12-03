@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets
 import com.google.common.collect.Lists
 import org.rocksdb._
 import org.slf4j.LoggerFactory
+import org.zhinang.util.GZipUtils
 import wiki.dig.common.MyConf
 import wiki.dig.db.ast.Db
 import wiki.dig.repo._
@@ -199,8 +200,8 @@ object PageDb extends Db {
 
   private def saveContent(id: Int, content: String) = {
     val key = ByteUtil.int2bytes(id)
-    //val value = GZipUtils.compress(content.getBytes(UTF_8))
-    val value = content.getBytes(UTF_8)
+    val value = GZipUtils.compress(content.getBytes(UTF_8))
+//    val value = content.getBytes(UTF_8)
     db.put(contentHandler, key, value)
   }
 
@@ -208,8 +209,8 @@ object PageDb extends Db {
     db.get(contentHandler, ByteUtil.int2bytes(id))
   ) match {
     case Some(bytes) =>
-      //val unzipped = GZipUtils.decompress(bytes)
-      Option(new String(bytes, UTF_8))
+      val unzipped = GZipUtils.decompress(bytes)
+      Option(new String(unzipped, UTF_8))
 
     case None => None
   }
