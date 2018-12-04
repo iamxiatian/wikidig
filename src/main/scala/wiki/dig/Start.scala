@@ -14,6 +14,7 @@ object Start extends App {
                      buildPageDb: Boolean = false,
                      buildPageContentDb: Boolean = false,
                      sample: Option[Int] = None,
+                     catPages: Boolean = false,
                      startId: Int = 1,
                      batchSize: Int = 1000
                    )
@@ -36,6 +37,9 @@ object Start extends App {
 
     opt[Unit]("buildPageContentDb").action((_, c) =>
       c.copy(buildPageContentDb = true)).text("build page content db with rocksdb format.")
+
+    opt[Unit]("catPages").action((_, c) =>
+      c.copy(catPages = true)).text("output category-page mappings in hierarchy db.")
 
     opt[Int]('s', "sample").optional().
       action((x, c) => c.copy(sample = Some(x))).

@@ -248,17 +248,19 @@ object CategoryHierarchyDb extends Db {
     * 按照如下方式把每个类别关联的文章ID集合输出到文本文件中：
     * cate_id, page1 id, page2 id, ...
     *
+    * 同时，把所有出现的文章id，以无重复的方式记录到pageIdsFile
+    *
     * @param f
     */
-  def outputPageIds(cateogryPagesFile: File,
+  def outputPageIds(cateogryPagesFile: File = new File("./category_pages.txt"),
                     pageIdsFile: File = new File("./page_all_ids.txt")) = {
     println("Start to output page ids of each category")
     val writer = Files.newWriter(cateogryPagesFile, UTF_8)
 
     val pageIdSet = mutable.Set.empty[Int] //存放所有关联的网页ID
     val queue = mutable.Queue.empty[(Int, Int)]
-    startNodeIds.foreach(id => queue.enqueue((id, 1)))
-    pageIdSet
+    startNodeIds.foreach(cid => queue.enqueue((cid, 1)))
+
     var counter = 0
     while (queue.nonEmpty) {
       val (cid, depth) = queue.dequeue()
@@ -273,7 +275,7 @@ object CategoryHierarchyDb extends Db {
           }
 
           val pageIds = CategoryDb.getPages(cid)
-          pageIds.foreach { id => pageIdSet += id }
+          pageIds.foreach { pid => pageIdSet += pid }
 
           writer.write(s"$cid, ")
           writer.write(pageIds.mkString(", "))
@@ -301,14 +303,20 @@ object CategoryHierarchyDb extends Db {
   }
 
   /**
-    * 抽样n个三角形
+    * 抽样n个三角形, 即一个父类R和两个子类A,B，形成一个三角形(R, A, B).
     *
-    * @param n
+    * 输出格式为一个文本文件, 文件中的每一行为R, A, B
+    *
+    * @param n           抽样结果的预计数量
+    * @param f           抽样结果保存的文件
+    * @param isNameLabel true表示输出的是类别的名称，否则为类别的ID
     */
-  def sample(n: Int): Unit = {
+  def sample(n: Int,
+             triangleFile: File = new File("./triangle.ids.txt"),
+             isNameLabel: Boolean = false): Unit = {
     val totalWeight = getTotalWeight().toInt
 
-    val writer = Files.newWriter(new File("./triangle.txt"), UTF_8)
+    val writer = Files.newWriter(triangleFile, UTF_8)
 
     //在每个节点上按比例抽样。
     val queue = mutable.Queue.empty[(Int, Int)]
@@ -318,6 +326,9 @@ object CategoryHierarchyDb extends Db {
     startNodeIds.foreach(id => queue.enqueue((id, 1)))
 
     println(s"total weight: $totalWeight")
+
+    //存放出现在三角形中的所有类别的ID
+    val categoryIdSet = mutable.Set.empty[Int]
 
     while (queue.nonEmpty) {
       val (cid, depth) = queue.dequeue()
@@ -356,8 +367,16 @@ object CategoryHierarchyDb extends Db {
                   //挑选第2个子类，但不能和第一个重复
                   val y = next(x)
 
+                  categoryIdSet += cid
+                  categoryIdSet += x
+                  categoryIdSet += y
+
                   //output (cid, x, y)
-                  val line = s"${CategoryDb.getNameById(cid).getOrElse("")}, ${CategoryDb.getNameById(x).getOrElse("")}, ${CategoryDb.getNameById(y).getOrElse("")}\n"
+                  val line = if (isNameLabel)
+                    s"${CategoryDb.getNameById(cid).getOrElse("")}, ${CategoryDb.getNameById(x).getOrElse("")}, ${CategoryDb.getNameById(y).getOrElse("")}\n"
+                  else
+                    s"$cid, $x, $y"
+
                   writer.write(line)
                   if (counter % 100 == 0) writer.flush()
                 }
@@ -373,8 +392,35 @@ object CategoryHierarchyDb extends Db {
           print("X")
       }
     }
-
     writer.close()
+
+    //把所有抽样结果中出现的类别id保存到文本文件中
+    print("write category ids appeared in sample: ... ")
+    val categoryIdWriter = Files.newWriter(new File("sample.categories.txt"), UTF_8)
+    categoryIdSet.foreach {
+      id =>
+        categoryIdWriter.write(id)
+        categoryIdWriter.write("\n")
+    }
+    println("DONE!")
+
+    //把所有抽样结果中出现的文章id保存到文本文件中
+    print("write page ids appeared in sample: ... ")
+    val pageIdSet = mutable.Set.empty[Int]
+    categoryIdSet.foreach {
+      cid =>
+        CategoryDb.getPages(cid).foreach {
+          pid => pageIdSet += pid
+        }
+    }
+
+    val pageIdWriter = Files.newWriter(new File("sample.pages.txt"), UTF_8)
+    pageIdSet.foreach {
+      id =>
+        pageIdWriter.write(id)
+        pageIdWriter.write("\n")
+    }
+    println("DONE!")
   }
 
   /**
