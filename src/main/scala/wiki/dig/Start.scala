@@ -1,7 +1,7 @@
 package wiki.dig
 
 import wiki.dig.common.{BuildInfo, MyConf}
-import wiki.dig.db.{CategoryDb, CategoryHierarchyDb, PageDb}
+import wiki.dig.db.{CategoryDb, CategoryHierarchyDb, PageContentDb, PageDb}
 
 /**
   * Application Start
@@ -12,7 +12,10 @@ object Start extends App {
                      buildCategoryPairs: Boolean = false,
                      buildHierarchy: Boolean = false,
                      buildPageDb: Boolean = false,
-                     sample: Option[Int] = None
+                     buildPageContentDb: Boolean = false,
+                     sample: Option[Int] = None,
+                     startPage: Int = 1,
+                     pageSize: Int = 500
                    )
 
   val parser = new scopt.OptionParser[Config]("bin/spider") {
@@ -31,9 +34,22 @@ object Start extends App {
     opt[Unit]("buildPageDb").action((_, c) =>
       c.copy(buildPageDb = true)).text("build page db with rocksdb format.")
 
+    opt[Unit]("buildPageContentDb").action((_, c) =>
+      c.copy(buildPageDb = true)).text("build page content db with rocksdb format.")
+
     opt[Int]('s', "sample").optional().
       action((x, c) => c.copy(sample = Some(x))).
       text("sample n triangles.")
+
+    opt[Int]("startPage").action(
+      (x, c) =>
+        c.copy(startPage = x)
+    ).text("build db from specified page.")
+
+    opt[Int]("pageSize").action(
+      (x, c) =>
+        c.copy(pageSize = x)
+    ).text("page size when build db.")
 
     help("help").text("prints this usage text")
 
@@ -61,8 +77,14 @@ object Start extends App {
 
       if (config.buildPageDb) {
         println("build page db ...")
-        PageDb.build()
+        PageDb.build(config.startPage, config.pageSize)
         PageDb.close()
+      }
+
+      if (config.buildPageContentDb) {
+        println("build page db ...")
+        PageContentDb.build(config.startPage, config.pageSize)
+        PageContentDb.close()
       }
     case None => {
       println( """Wrong parameters :(""".stripMargin)

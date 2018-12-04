@@ -45,6 +45,20 @@ object PageRepo extends Repo[Page] {
     pages.length.result
   }
 
+  /**
+    * 获取维基页面的基本信息，不包含全文
+    * @param page
+    * @param limit
+    * @return
+    */
+  def listWithoutContent(page: Int,
+                         limit: Int): Future[Seq[(Int, String, Boolean)]] =
+    db run {
+      pages.drop((page - 1) * limit).take(limit)
+        .map(r => (r.id, r.name, r.isDisambiguation))
+        .result
+    }
+
   def list(page: Int, limit: Int): Future[Seq[Page]] = db run {
     pages.drop((page - 1) * limit).take(limit).result
   }

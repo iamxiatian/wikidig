@@ -6,7 +6,6 @@ import java.nio.charset.StandardCharsets
 import com.google.common.collect.Lists
 import org.rocksdb._
 import org.slf4j.LoggerFactory
-import org.zhinang.util.GZipUtils
 import wiki.dig.common.MyConf
 import wiki.dig.db.ast.Db
 import wiki.dig.repo._
@@ -51,8 +50,7 @@ object PageDb extends Db {
     new ColumnFamilyDescriptor("disambiguation".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("inlinks".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("outlinks".getBytes(UTF_8)),
-    new ColumnFamilyDescriptor("category".getBytes(UTF_8)),
-    new ColumnFamilyDescriptor("content".getBytes(UTF_8))
+    new ColumnFamilyDescriptor("category".getBytes(UTF_8))
   )
 
   protected val cfHandlers = Lists.newArrayList[ColumnFamilyHandle]
@@ -65,31 +63,27 @@ object PageDb extends Db {
   protected val inlinksHandler: ColumnFamilyHandle = cfHandlers.get(3)
   protected val outlinksHandler: ColumnFamilyHandle = cfHandlers.get(4)
   protected val categoryHandler: ColumnFamilyHandle = cfHandlers.get(5)
-  protected val contentHandler: ColumnFamilyHandle = cfHandlers.get(6)
 
-
-  def build() = {
-    val pageSize = 500
+  def build(startPage: Int = 1, pageSize: Int = 500) = {
     val count = Await.result(PageRepo.count(), Duration.Inf)
     val pageNum = count / pageSize + 1
-    (1 to pageNum) foreach {
+    (startPage to pageNum) foreach {
       p =>
         println(s"process $p / $pageNum ...")
-        val pages = Await.result(PageRepo.list(p, pageSize), Duration.Inf)
+        val pages = Await.result(PageRepo.listWithoutContent(p, pageSize), Duration.Inf)
 
         pages.foreach {
-          page =>
-            saveIdName(page.id, page.name)
-            saveInlinks(page.id)
-            saveOutlinks(page.id)
+          case (id, name, disambiguation) =>
+            saveIdName(id, name)
+            saveInlinks(id)
+            saveOutlinks(id)
 
             //只记录是消歧义的页面，其他情况默认为非歧义页面
-            if (page.isDisambiguation) {
-              saveDisambiguation(page.id)
+            if (disambiguation) {
+              saveDisambiguation(id)
             }
 
-            saveCategories(page.id)
-            saveContent(page.id, page.text)
+            saveCategories(id)
         }
     }
 
@@ -196,23 +190,6 @@ object PageDb extends Db {
   def isDisambiguation(id: Int): Boolean = {
     val key = ByteUtil.int2bytes(id)
     db.get(disambiHandler, key) != null
-  }
-
-  private def saveContent(id: Int, content: String) = {
-    val key = ByteUtil.int2bytes(id)
-    val value = GZipUtils.compress(content.getBytes(UTF_8))
-//    val value = content.getBytes(UTF_8)
-    db.put(contentHandler, key, value)
-  }
-
-  def getContent(id: Int): Option[String] = Option(
-    db.get(contentHandler, ByteUtil.int2bytes(id))
-  ) match {
-    case Some(bytes) =>
-      val unzipped = GZipUtils.decompress(bytes)
-      Option(new String(unzipped, UTF_8))
-
-    case None => None
   }
 
   private def getBytesFromSeq(ids: Seq[Int]): Array[Byte] = {
