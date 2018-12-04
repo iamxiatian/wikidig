@@ -49,7 +49,8 @@ object PageDb extends Db {
     new ColumnFamilyDescriptor("disambiguation".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("inlinks".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("outlinks".getBytes(UTF_8)),
-    new ColumnFamilyDescriptor("category".getBytes(UTF_8))
+    new ColumnFamilyDescriptor("category".getBytes(UTF_8)),
+    new ColumnFamilyDescriptor("redirects".getBytes(UTF_8))
   )
 
   protected val cfHandlers = Lists.newArrayList[ColumnFamilyHandle]
@@ -62,6 +63,7 @@ object PageDb extends Db {
   protected val inlinksHandler: ColumnFamilyHandle = cfHandlers.get(3)
   protected val outlinksHandler: ColumnFamilyHandle = cfHandlers.get(4)
   protected val categoryHandler: ColumnFamilyHandle = cfHandlers.get(5)
+  protected val redirectsHandler: ColumnFamilyHandle = cfHandlers.get(6)
 
   def build(startId: Int = 1, batchSize: Int = 1000) = {
     val maxId = Await.result(PageRepo.maxId(), Duration.Inf).get
@@ -84,7 +86,12 @@ object PageDb extends Db {
             saveDisambiguation(id)
           }
 
+          //保存页面对应的分类
           saveCategories(id)
+
+          //保存指向该页面的别名
+          saveRedirects(id)
+
           fromId = id
       }
       //println()
@@ -109,7 +116,10 @@ object PageDb extends Db {
     val idBytes = ByteUtil.int2bytes(id)
     val nameBytes = ByteUtil.string2bytes(name)
     db.put(id2nameHandler, idBytes, nameBytes)
-    db.put(name2idHandler, nameBytes, idBytes)
+
+    //转换为小写形式
+    val nameBytes2 = ByteUtil.string2bytes(name.toLowerCase)
+    db.put(name2idHandler, nameBytes2, idBytes)
   }
 
   def getNameById(id: Int): Option[String] = Option(
@@ -117,7 +127,7 @@ object PageDb extends Db {
   ).map(ByteUtil.bytes2string)
 
   def getIdByName(name: String): Option[Int] = Option(
-    db.get(name2idHandler, ByteUtil.string2bytes(name))
+    db.get(name2idHandler, ByteUtil.string2bytes(name.toLowerCase()))
   ).map(ByteUtil.bytes2Int)
 
   private def saveInlinks(cid: Int) = {
@@ -174,6 +184,30 @@ object PageDb extends Db {
     db.get(categoryHandler, ByteUtil.int2bytes(id))
   ).map(readSeqSizeFromBytes)
 
+  private def saveRedirects(id: Int) = {
+    val redirects = Await.result(PageRedirectRepo.findRedirects(id), Duration.Inf)
+    val key = ByteUtil.int2bytes(id)
+    val value = getBytesFromStringSeq(redirects)
+    db.put(redirectsHandler, key, value)
+
+    //同时把所有的redirects记录到name2idHandler
+    redirects.foreach {
+      r =>
+        val nameBytes = ByteUtil.string2bytes(r.toLowerCase)
+        db.put(name2idHandler, nameBytes, key)
+    }
+  }
+
+  def getRedirects(id: Int): Seq[String] = Option(
+    db.get(redirectsHandler, ByteUtil.int2bytes(id))
+  ) match {
+    case Some(bytes) => readStringSeqFromBytes(bytes)
+    case None => Seq.empty
+  }
+
+  def getRedirectCount(id: Int): Option[Int] = Option(
+    db.get(redirectsHandler, ByteUtil.int2bytes(id))
+  ).map(readSeqSizeFromBytes)
 
   /**
     * 记录id为消歧义页面
@@ -214,6 +248,27 @@ object PageDb extends Db {
     val din = new DataInputStream(new ByteArrayInputStream(bytes))
     val count = din.readInt()
     val ids = (0 until count).map(_ => din.readInt()).toSeq
+    din.close()
+    ids
+  }
+
+  private def getBytesFromStringSeq(ids: Seq[String]): Array[Byte] = {
+    val out = new ByteArrayOutputStream()
+    val dos = new DataOutputStream(out)
+
+    dos.writeInt(ids.size)
+    ids.foreach(dos.writeUTF(_))
+
+    dos.close()
+    out.close()
+
+    out.toByteArray
+  }
+
+  private def readStringSeqFromBytes(bytes: Array[Byte]): Seq[String] = {
+    val din = new DataInputStream(new ByteArrayInputStream(bytes))
+    val count = din.readInt()
+    val ids = (0 until count).map(_ => din.readUTF()).toSeq
     din.close()
     ids
   }
