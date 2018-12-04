@@ -37,7 +37,6 @@ object PageDb extends Db {
   if (!dbPath.getParentFile.exists())
     dbPath.getParentFile.mkdirs()
 
-
   RocksDB.loadLibrary()
 
   val options = new DBOptions().setCreateIfMissing(!MyConf.pageDbReadOnly)
