@@ -63,27 +63,31 @@ object PageDb extends Db {
   protected val outlinksHandler: ColumnFamilyHandle = cfHandlers.get(4)
   protected val categoryHandler: ColumnFamilyHandle = cfHandlers.get(5)
 
-  def build(startPage: Int = 1, pageSize: Int = 500) = {
-    val count = Await.result(PageRepo.count(), Duration.Inf)
-    val pageNum = count / pageSize + 1
-    (startPage to pageNum) foreach {
-      p =>
-        println(s"process $p / $pageNum ...")
-        val pages = Await.result(PageRepo.listWithoutContent(p, pageSize), Duration.Inf)
+  def build(startId: Int = 1, batchSize: Int = 1000) = {
+    val maxId = Await.result(PageRepo.maxId(), Duration.Inf).get
+    //val maxId = 58046434 //最大的id
 
-        pages.foreach {
-          case (id, name, disambiguation) =>
-            saveIdName(id, name)
-            saveInlinks(id)
-            saveOutlinks(id)
+    var fromId = startId
 
-            //只记录是消歧义的页面，其他情况默认为非歧义页面
-            if (disambiguation) {
-              saveDisambiguation(id)
-            }
+    while (fromId < maxId) {
+      println(s"process $fromId / $maxId ...")
+      val pages = Await.result(PageRepo.listBasicInfoFromId(fromId, batchSize), Duration.Inf)
+      pages.foreach {
+        case (id, name, disambiguation) =>
+          saveIdName(id, name)
+          saveInlinks(id)
+          saveOutlinks(id)
 
-            saveCategories(id)
-        }
+          //只记录是消歧义的页面，其他情况默认为非歧义页面
+          if (disambiguation) {
+            saveDisambiguation(id)
+          }
+
+          saveCategories(id)
+          fromId = id
+      }
+
+      fromId = fromId + 1
     }
 
     println("DONE")

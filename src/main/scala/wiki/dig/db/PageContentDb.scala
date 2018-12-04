@@ -44,23 +44,24 @@ object PageContentDb extends Db {
 
   protected val defaultHandler: ColumnFamilyHandle = cfHandlers.get(0)
 
-  def debug(s: String) = print(s)
+  val maxId = 58046434 //最大的id
 
-  def build(startPage: Int = 1, pageSize: Int = 500) = {
-    val count = Await.result(PageRepo.count(), Duration.Inf)
-    val pageNum = count / pageSize + 1
-    (startPage to pageNum) foreach {
-      p =>
-        println(s"process $p / $pageNum ...")
-        val pages = Await.result(PageRepo.list(p, pageSize), Duration.Inf)
+  def build(startId: Int = 1, batchSize: Int = 1000) = {
+    val maxId = Await.result(PageRepo.maxId(), Duration.Inf).get
+    //val maxId = 58046434 //最大的id
 
-        debug("\t")
-        pages.foreach {
-          page =>
-            debug(".")
-            saveContent(page.id, page.text)
-        }
-        debug("\n")
+    var fromId = startId
+
+    while (fromId < maxId) {
+      println(s"process $fromId / $maxId ...")
+      val pages = Await.result(PageRepo.listFromId(fromId, batchSize), Duration.Inf)
+      pages.foreach {
+        page =>
+          saveContent(page.id, page.text)
+          fromId = page.id
+      }
+
+      fromId = fromId + 1
     }
 
     println("DONE")

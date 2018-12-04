@@ -45,21 +45,32 @@ object PageRepo extends Repo[Page] {
     pages.length.result
   }
 
+  def maxId(): Future[Option[Int]] = db run {
+    pages.map(_.id).max.result
+  }
+
   /**
     * 获取维基页面的基本信息，不包含全文
+    *
     * @param page
     * @param limit
     * @return
     */
-  def listWithoutContent(page: Int,
-                         limit: Int): Future[Seq[(Int, String, Boolean)]] =
+  def listBasicInfoFromId(fromId: Int,
+                          limit: Int): Future[Seq[(Int, String, Boolean)]] =
     db run {
-      pages.drop((page - 1) * limit).take(limit)
+      pages.filter(_.id >= fromId)
+        .sortBy(_.id)
         .map(r => (r.id, r.name, r.isDisambiguation))
+        .take(limit)
         .result
     }
 
-  def list(page: Int, limit: Int): Future[Seq[Page]] = db run {
-    pages.drop((page - 1) * limit).take(limit).result
+  def listFromId(fromId: Int,
+                 limit: Int): Future[Seq[Page]] = db run {
+    pages.filter(_.id >= fromId)
+      .sortBy(_.id)
+      .take(limit)
+      .result
   }
 }

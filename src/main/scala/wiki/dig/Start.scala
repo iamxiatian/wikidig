@@ -14,8 +14,8 @@ object Start extends App {
                      buildPageDb: Boolean = false,
                      buildPageContentDb: Boolean = false,
                      sample: Option[Int] = None,
-                     startPage: Int = 1,
-                     pageSize: Int = 500
+                     startId: Int = 1,
+                     batchSize: Int = 1000
                    )
 
   val parser = new scopt.OptionParser[Config]("bin/spider") {
@@ -41,15 +41,15 @@ object Start extends App {
       action((x, c) => c.copy(sample = Some(x))).
       text("sample n triangles.")
 
-    opt[Int]("startPage").action(
+    opt[Int]("startId").action(
       (x, c) =>
-        c.copy(startPage = x)
-    ).text("build db from specified page.")
+        c.copy(startId = x)
+    ).text("build db from specified page id.")
 
-    opt[Int]("pageSize").action(
+    opt[Int]("batchSize").action(
       (x, c) =>
-        c.copy(pageSize = x)
-    ).text("page size when build db.")
+        c.copy(batchSize = x)
+    ).text("batch size when build db.")
 
     help("help").text("prints this usage text")
 
@@ -77,13 +77,13 @@ object Start extends App {
 
       if (config.buildPageDb) {
         println("build page db ...")
-        PageDb.build(config.startPage, config.pageSize)
+        PageDb.build(config.startId, config.batchSize)
         PageDb.close()
       }
 
       if (config.buildPageContentDb) {
         println("build page db ...")
-        PageContentDb.build(config.startPage, config.pageSize)
+        PageContentDb.build(config.startId, config.batchSize)
         PageContentDb.close()
       }
     case None => {
