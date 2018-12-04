@@ -2,6 +2,40 @@
 
 wikidig: Dig wikipedia knowledge.
 
+** 提供的数据库及功能
+wikidig将维基百科数据经过清洗变换之后，保存到rocksdb数据库之中，以方便独立运行，避免对第三方数据库的依赖。目前的数据库对象及功能如下：
+
+*** wiki.dig.db.CategoryDb
+1. 根据名称获取id
+2. 根据id获取分类名称
+3. 根据id获取所有的子类(outlinks)id列表
+4. 根据id获取所有的父类(inlinks)id列表
+5. 根据id获取所有的指向该分类的文章页面id列表
+*** wiki.dig.db.PageDb
+1. 根据名称(包括重定向过来的名称)获取id
+2. 根据id获取名称
+3. 根据id获取所有的可重定向过来的名称列表
+4. 根据id获取所有的入链(inlinks)
+5. 根据id获取所有的出链
+6. 根据id获取所隶属的类别集合
+*** wiki.dig.db.PageContentDb
+1. 根据id获取对一个的维基百科全文
+
+*** wiki.dig.db.CategoryHierarchyDb
+1. 获取所有的``Main topic classification``下的主要分类， 如Mathematics， People等
+2. 
+
+** 处理流程
+
+1. 利用
+
+** 主要数据库
+
+1. 记录维基分类的数据库： CategoryDb
+
+2. 记录维基页面信息的数据库：PageDb
+
+
 ** Wiki Clickstream
 
 https://meta.wikimedia.org/wiki/Research:Wikipedia_clickstream
