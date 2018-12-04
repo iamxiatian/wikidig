@@ -35,7 +35,7 @@ object Start extends App {
       c.copy(buildPageDb = true)).text("build page db with rocksdb format.")
 
     opt[Unit]("buildPageContentDb").action((_, c) =>
-      c.copy(buildPageDb = true)).text("build page content db with rocksdb format.")
+      c.copy(buildPageContentDb = true)).text("build page content db with rocksdb format.")
 
     opt[Int]('s', "sample").optional().
       action((x, c) => c.copy(sample = Some(x))).

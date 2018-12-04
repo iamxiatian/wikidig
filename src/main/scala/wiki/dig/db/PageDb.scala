@@ -74,7 +74,7 @@ object PageDb extends Db {
       val pages = Await.result(PageRepo.listBasicInfoFromId(fromId, batchSize), Duration.Inf)
       pages.foreach {
         case (id, name, disambiguation) =>
-          print(".")
+          //print(".")
           saveIdName(id, name)
           saveInlinks(id)
           saveOutlinks(id)
@@ -87,7 +87,7 @@ object PageDb extends Db {
           saveCategories(id)
           fromId = id
       }
-      println()
+      //println()
 
       fromId = fromId + 1
     }
