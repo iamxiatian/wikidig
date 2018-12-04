@@ -44,6 +44,8 @@ object PageContentDb extends Db {
 
   protected val defaultHandler: ColumnFamilyHandle = cfHandlers.get(0)
 
+  def debug(s: String) = print(s)
+
   def build(startPage: Int = 1, pageSize: Int = 500) = {
     val count = Await.result(PageRepo.count(), Duration.Inf)
     val pageNum = count / pageSize + 1
@@ -52,10 +54,13 @@ object PageContentDb extends Db {
         println(s"process $p / $pageNum ...")
         val pages = Await.result(PageRepo.list(p, pageSize), Duration.Inf)
 
+        debug("\t")
         pages.foreach {
           page =>
+            debug(".")
             saveContent(page.id, page.text)
         }
+        debug("\n")
     }
 
     println("DONE")
