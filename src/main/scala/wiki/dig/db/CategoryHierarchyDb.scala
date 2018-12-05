@@ -375,7 +375,7 @@ object CategoryHierarchyDb extends Db {
                   val line = if (isNameLabel)
                     s"${CategoryDb.getNameById(cid).getOrElse("")}, ${CategoryDb.getNameById(x).getOrElse("")}, ${CategoryDb.getNameById(y).getOrElse("")}\n"
                   else
-                    s"$cid, $x, $y"
+                    s"$cid, $x, $y\n"
 
                   writer.write(line)
                   if (counter % 100 == 0) writer.flush()
@@ -399,26 +399,31 @@ object CategoryHierarchyDb extends Db {
     val categoryIdWriter = Files.newWriter(new File("sample.category.ids.txt"), UTF_8)
     categoryIdSet.foreach {
       id =>
-        categoryIdWriter.write(id)
-        categoryIdWriter.write("\n")
+        categoryIdWriter.write(s"$id\n")
     }
     println("DONE!")
 
     //把所有抽样结果中出现的文章id保存到文本文件中
     print("write page ids appeared in sample: ... ")
+
+    val catPageMappingWriter = Files.newWriter(new File("sample.cat_page.txt"), UTF_8)
+    catPageMappingWriter.write("# category_id page_id1 page_id2 ...\n\n")
     val pageIdSet = mutable.Set.empty[Int]
     categoryIdSet.foreach {
       cid =>
-        CategoryDb.getPages(cid).foreach {
-          pid => pageIdSet += pid
+        val pids = CategoryDb.getPages(cid)
+        catPageMappingWriter.write(s"$cid ${pids.mkString(" ")}\n")
+
+        pids.foreach {
+          pid =>
+            pageIdSet += pid
         }
     }
 
     val pageIdWriter = Files.newWriter(new File("sample.page.ids.txt"), UTF_8)
     pageIdSet.foreach {
       id =>
-        pageIdWriter.write(id)
-        pageIdWriter.write("\n")
+        pageIdWriter.write(s"$id\n")
     }
     println("DONE!")
   }
