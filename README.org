@@ -23,18 +23,28 @@ wikidig将维基百科数据经过清洗变换之后，保存到rocksdb数据库
 
 *** wiki.dig.db.CategoryHierarchyDb
 1. 获取所有的``Main topic classification``下的主要分类， 如Mathematics， People等
-2. 
+2.
 
-** 处理流程
+** 试验
+*** 当前问题
+  1. 文档的Embedding没有去除停用词，没有取对数平滑TF
 
-1. 利用
 
-** 主要数据库
+** 命令行功能
+1. 生成三角形
 
-1. 记录维基分类的数据库： CategoryDb
+bin/start --sample n
 
-2. 记录维基页面信息的数据库：PageDb
+生成n个三角形，n为一个整数，执行完毕后，会在当前目录下输出以sample开始的三个文件：
 
+sample.triangle.ids.txt 每行为一个三角形，第一个id是父节点，剩余两个为子节点
+sample.category.ids.txt 当前抽样结果中出现的分类id集合
+sample.cat_page.txt 抽样结果中分类与文章id的对应关系，每一行中的第一个数字为分类id，其余数字为该分类下的文章id
+sample.page.ids.txt 抽样结果中涉及的文章id集合
+sample.page.embedding.txt 文章对应的所有词语的embedding结果的平均值
+
+
+* 参考
 
 ** Wiki Clickstream
 
