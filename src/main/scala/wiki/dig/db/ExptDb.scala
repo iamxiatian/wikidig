@@ -58,7 +58,13 @@ object ExptDb extends Db with DbHelper {
         case (line, idx) =>
           val pid = line.toInt
           PageContentDb.getContent(pid).map {
-            text =>
+            content =>
+              //只保留前面的200行，进行分析
+              val text =
+                if (content.length > 5000)
+                  content.split("\n").take(200).mkString("\n")
+                else
+                  content
               val v = calculateVector(text)
               db.put(ByteUtil.int2bytes(pid), getBytesFromFloatSeq(v.data))
 
