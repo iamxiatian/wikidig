@@ -59,17 +59,18 @@ object ExptDb extends Db with DbHelper {
           val pid = line.toInt
           PageContentDb.getContent(pid).map {
             content =>
-              //只保留前面的200行，进行分析
+              //只保留前面的10000个字符，进行分析
               val text =
-                if (content.length > 5000)
-                  content.split("\n").take(200).mkString("\n")
-                else
-                  content
+                if (content.length > 10000) {
+                  val pos = content.indexOf(".", 8000)
+                  // 为避免单词被截断，保留最后一个空格之前的内容
+                  if(pos>0) content.substring(0, pos) else content
+                } else content
               val v = calculateVector(text)
               db.put(ByteUtil.int2bytes(pid), getBytesFromFloatSeq(v.data))
 
               val stringValues = v.data.map(f.format(_)).mkString(" ")
-              pageEmbeddingWriter.write(s"$pid ${stringValues}")
+              pageEmbeddingWriter.write(s"$pid ${stringValues}\n")
           }
           if (idx % 500 == 0) {
             println(idx)
