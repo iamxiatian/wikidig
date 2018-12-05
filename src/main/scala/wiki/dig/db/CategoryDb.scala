@@ -7,7 +7,7 @@ import com.google.common.collect.Lists
 import org.rocksdb._
 import org.slf4j.LoggerFactory
 import wiki.dig.common.MyConf
-import wiki.dig.db.ast.Db
+import wiki.dig.db.ast.{Db, DbHelper}
 import wiki.dig.repo.{CategoryInlinkRepo, CategoryOutlinkRepo, CategoryPageRepo, CategoryRepo}
 import wiki.dig.util.ByteUtil
 
@@ -25,7 +25,7 @@ import scala.concurrent.duration.Duration
   *
   * 类别指向的页面，来自于category_pages.
   */
-object CategoryDb extends Db {
+object CategoryDb extends Db with DbHelper {
   val LOG = LoggerFactory.getLogger(this.getClass)
 
   import StandardCharsets.UTF_8
@@ -110,14 +110,14 @@ object CategoryDb extends Db {
   private def saveInlinks(cid: Int) = {
     val links = Await.result(CategoryInlinkRepo.findInlinksById(cid), Duration.Inf)
     val key = ByteUtil.int2bytes(cid)
-    val value = getBytesFromSeq(links)
+    val value = getBytesFromIntSeq(links)
     db.put(inlinksHandler, key, value)
   }
 
   def getInlinks(cid: Int): Seq[Int] = Option(
     db.get(inlinksHandler, ByteUtil.int2bytes(cid))
   ) match {
-    case Some(bytes) => readSeqFromBytes(bytes)
+    case Some(bytes) => readIntSeqFromBytes(bytes)
     case None => Seq.empty
   }
 
@@ -128,14 +128,14 @@ object CategoryDb extends Db {
   private def saveOutlinks(cid: Int) = {
     val links = Await.result(CategoryOutlinkRepo.findOutlinksById(cid), Duration.Inf)
     val key = ByteUtil.int2bytes(cid)
-    val value = getBytesFromSeq(links)
+    val value = getBytesFromIntSeq(links)
     db.put(outlinksHandler, key, value)
   }
 
   def getOutlinks(cid: Int): Seq[Int] = Option(
     db.get(outlinksHandler, ByteUtil.int2bytes(cid))
   ) match {
-    case Some(bytes) => readSeqFromBytes(bytes)
+    case Some(bytes) => readIntSeqFromBytes(bytes)
     case None => Seq.empty
   }
 
@@ -146,14 +146,14 @@ object CategoryDb extends Db {
   private def savePages(cid: Int) = {
     val pageIds = Await.result(CategoryPageRepo.findPagesById(cid), Duration.Inf)
     val key = ByteUtil.int2bytes(cid)
-    val value = getBytesFromSeq(pageIds)
+    val value = getBytesFromIntSeq(pageIds)
     db.put(pagesHandler, key, value)
   }
 
   def getPages(cid: Int): Seq[Int] = Option(
     db.get(pagesHandler, ByteUtil.int2bytes(cid))
   ) match {
-    case Some(bytes) => readSeqFromBytes(bytes)
+    case Some(bytes) => readIntSeqFromBytes(bytes)
     case None => Seq.empty
   }
 
@@ -161,41 +161,13 @@ object CategoryDb extends Db {
     db.get(pagesHandler, ByteUtil.int2bytes(cid))
   ).map(readSeqSizeFromBytes)
 
-  private def getBytesFromSeq(ids: Seq[Int]): Array[Byte] = {
-    val out = new ByteArrayOutputStream()
-    val dos = new DataOutputStream(out)
-
-    dos.writeInt(ids.size)
-    ids.foreach(dos.writeInt(_))
-
-    dos.close()
-    out.close()
-
-    out.toByteArray
-  }
-
-  private def readSeqFromBytes(bytes: Array[Byte]): Seq[Int] = {
-    val din = new DataInputStream(new ByteArrayInputStream(bytes))
-    val count = din.readInt()
-    val ids = (0 until count).map(_ => din.readInt()).toSeq
-    din.close
-    ids
-  }
-
-  private def readSeqSizeFromBytes(bytes: Array[Byte]): Int = {
-    val din = new DataInputStream(new ByteArrayInputStream(bytes))
-    val count = din.readInt()
-    din.close
-    count
-  }
-
   /**
     * 数据库名字
     */
   def dbName: String = "Category DB"
 
   override def close(): Unit = {
-    print(s"==> Close Category Db ... ")
+    print(s"==> Close $dbName ... ")
     cfHandlers.forEach(h => h.close())
     db.close()
     println("DONE.")

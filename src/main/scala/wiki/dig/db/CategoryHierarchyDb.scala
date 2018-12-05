@@ -312,7 +312,7 @@ object CategoryHierarchyDb extends Db {
     * @param isNameLabel true表示输出的是类别的名称，否则为类别的ID
     */
   def sample(n: Int,
-             triangleFile: File = new File("./triangle.ids.txt"),
+             triangleFile: File = new File("./sample.triangle.ids.txt"),
              isNameLabel: Boolean = false): Unit = {
     val totalWeight = getTotalWeight().toInt
 
@@ -396,7 +396,7 @@ object CategoryHierarchyDb extends Db {
 
     //把所有抽样结果中出现的类别id保存到文本文件中
     print("write category ids appeared in sample: ... ")
-    val categoryIdWriter = Files.newWriter(new File("sample.categories.txt"), UTF_8)
+    val categoryIdWriter = Files.newWriter(new File("sample.category.ids.txt"), UTF_8)
     categoryIdSet.foreach {
       id =>
         categoryIdWriter.write(id)
@@ -414,7 +414,7 @@ object CategoryHierarchyDb extends Db {
         }
     }
 
-    val pageIdWriter = Files.newWriter(new File("sample.pages.txt"), UTF_8)
+    val pageIdWriter = Files.newWriter(new File("sample.page.ids.txt"), UTF_8)
     pageIdSet.foreach {
       id =>
         pageIdWriter.write(id)

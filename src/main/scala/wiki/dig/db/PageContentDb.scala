@@ -88,7 +88,7 @@ object PageContentDb extends Db {
   def dbName: String = "Page Content DB"
 
   override def close(): Unit = {
-    print(s"==> Close Page Db ... ")
+    print(s"==> Close $dbName ... ")
     cfHandlers.forEach(h => h.close())
     db.close()
     println("DONE.")

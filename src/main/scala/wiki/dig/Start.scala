@@ -1,7 +1,9 @@
 package wiki.dig
 
+import java.io.File
+
 import wiki.dig.common.{BuildInfo, MyConf}
-import wiki.dig.db.{CategoryDb, CategoryHierarchyDb, PageContentDb, PageDb}
+import wiki.dig.db._
 
 /**
   * Application Start
@@ -13,10 +15,11 @@ object Start extends App {
                      buildHierarchy: Boolean = false,
                      buildPageDb: Boolean = false,
                      buildPageContentDb: Boolean = false,
+                     buildEmbedding: Boolean = false,
                      sample: Option[Int] = None,
-                     catPages: Boolean = false,
                      startId: Int = 1,
-                     batchSize: Int = 1000
+                     batchSize: Int = 1000,
+                     inFile: Option[File] = None
                    )
 
   val parser = new scopt.OptionParser[Config]("bin/spider") {
@@ -38,8 +41,11 @@ object Start extends App {
     opt[Unit]("buildPageContentDb").action((_, c) =>
       c.copy(buildPageContentDb = true)).text("build page content db with rocksdb format.")
 
-    opt[Unit]("catPages").action((_, c) =>
-      c.copy(catPages = true)).text("output category-page mappings in hierarchy db.")
+    opt[Unit]("buildEmbedding").action((_, c) =>
+      c.copy(buildEmbedding = true)).text("build Embedding(must specify param f).")
+
+    opt[String]('i', "inFile").optional().action((x, c) =>
+      c.copy(inFile = Option(new File(x)))).text("input file name")
 
     opt[Int]('s', "sample").optional().
       action((x, c) => c.copy(sample = Some(x))).
@@ -89,6 +95,14 @@ object Start extends App {
         println("build page db ...")
         PageContentDb.build(config.startId, config.batchSize)
         PageContentDb.close()
+      }
+
+      if (config.buildEmbedding) {
+        if (config.inFile.isEmpty) {
+          println("input file not specified.")
+        } else {
+          EmbeddingDb.build(config.inFile.get)
+        }
       }
     case None => {
       println( """Wrong parameters :(""".stripMargin)
