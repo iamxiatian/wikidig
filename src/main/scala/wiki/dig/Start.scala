@@ -16,6 +16,7 @@ object Start extends App {
                      buildPageDb: Boolean = false,
                      buildPageContentDb: Boolean = false,
                      buildEmbedding: Boolean = false,
+                     outPageEmbedding: Boolean = false,
                      sample: Option[Int] = None,
                      startId: Int = 1,
                      batchSize: Int = 1000,
@@ -43,6 +44,9 @@ object Start extends App {
 
     opt[Unit]("buildEmbedding").action((_, c) =>
       c.copy(buildEmbedding = true)).text("build Embedding(must specify param f).")
+
+    opt[Unit]("outPageEmbedding").action((_, c) =>
+      c.copy(outPageEmbedding = true)).text("读取sample.page.ids.txt中的文章，将对应的embedding输出到sample.page.embedding.txt.")
 
     opt[String]('i', "inFile").optional().action((x, c) =>
       c.copy(inFile = Option(new File(x)))).text("input file name")
@@ -103,6 +107,10 @@ object Start extends App {
         } else {
           EmbeddingDb.build(config.inFile.get)
         }
+      }
+
+      if (config.outPageEmbedding) {
+        ExptDb.buildArticleEmbedding()
       }
     case None => {
       println( """Wrong parameters :(""".stripMargin)

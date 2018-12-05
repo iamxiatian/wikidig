@@ -4,7 +4,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, Da
 
 trait DbHelper {
 
-  def getBytesFromFloatSeq(ids: Seq[Float]): Array[Byte] = {
+  def getBytesFromFloatSeq(ids: Iterable[Float]): Array[Byte] = {
     val out = new ByteArrayOutputStream()
     val dos = new DataOutputStream(out)
 
@@ -26,7 +26,7 @@ trait DbHelper {
   }
 
 
-  def getBytesFromIntSeq(ids: Seq[Int]): Array[Byte] = {
+  def getBytesFromIntSeq(ids: Iterable[Int]): Array[Byte] = {
     val out = new ByteArrayOutputStream()
     val dos = new DataOutputStream(out)
 
