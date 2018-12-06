@@ -65,7 +65,7 @@ object PageDb extends Db with DbHelper {
   protected val categoryHandler: ColumnFamilyHandle = cfHandlers.get(5)
   protected val redirectsHandler: ColumnFamilyHandle = cfHandlers.get(6)
 
-  def build(startId: Int = 1, batchSize: Int = 1000) = {
+  def build(startId: Int = 9972945, batchSize: Int = 1000) = {
     val maxId = Await.result(PageRepo.maxId(), Duration.Inf).get
     //val maxId = 58046434 //最大的id
 
