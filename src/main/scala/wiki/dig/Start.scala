@@ -18,7 +18,7 @@ object Start extends App {
                      buildEmbedding: Boolean = false,
                      outPageEmbedding: Boolean = false,
                      sample: Option[Int] = None,
-                     startId: Int = 1,
+                     startId: Int = 9972945,
                      batchSize: Int = 1000,
                      inFile: Option[File] = None
                    )
