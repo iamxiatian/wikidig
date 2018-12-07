@@ -129,6 +129,22 @@ object ExptDb extends Db with DbHelper {
       readFloatSeqFromBytes(_)
     }
 
+  def outCategoryNames() = {
+    val source = Source.fromFile(new File("sample.category.ids.txt"), "UTF-8")
+    val writer = Files.newWriter(new File("sample.category.names.txt"), UTF_8)
+    source.getLines().filter(_.nonEmpty)
+      .foreach {
+        id =>
+          CategoryDb.getNameById(id.toInt).foreach {
+            name =>
+              writer.write(s"$id ${name}\n")
+          }
+      }
+    writer.close()
+    source.clone()
+    println("DONE")
+  }
+
   /**
     * 数据库名字
     */
@@ -139,5 +155,9 @@ object ExptDb extends Db with DbHelper {
     cfHandlers.forEach(h => h.close())
     db.close()
     println("DONE.")
+  }
+
+  def main(args: Array[String]): Unit = {
+    outCategoryNames()
   }
 }
