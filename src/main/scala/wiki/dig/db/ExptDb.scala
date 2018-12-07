@@ -141,7 +141,7 @@ object ExptDb extends Db with DbHelper {
           }
       }
     writer.close()
-    source.clone()
+    source.close()
     println("DONE")
   }
 
