@@ -60,13 +60,13 @@ object CategoryHierarchyDb extends Db {
   val Max_Depth = 5
 
 
-  def saveArticleCount(id: Int, count: Int) {
-    db.put(articleCountHandler, ByteUtil.int2bytes(id), ByteUtil.int2bytes(count))
+  def saveArticleCount(id: Int, count: Long) {
+    db.put(articleCountHandler, ByteUtil.int2bytes(id), ByteUtil.long2bytes(count))
   }
 
-  def getArticleCount(id: Int): Option[Int] = Option(
+  def getArticleCount(id: Int): Option[Long] = Option(
     db.get(articleCountHandler, ByteUtil.int2bytes(id))
-  ).map(ByteUtil.bytes2Int(_))
+  ).map(ByteUtil.bytes2Long(_))
 
   /**
     * 计算各个节点包含的文章数量，其子节点包含的文章数量也合并计算到该节点之中。    *
@@ -75,12 +75,12 @@ object CategoryHierarchyDb extends Db {
     */
   def calculateArticleCount(): Unit = {
     var ids = mutable.ListBuffer.empty[Int] //存放所有的id，深度依次递增
-    val countCache = mutable.Map.empty[Int, Int] //存放所有的id到文章的映射
+    val countCache = mutable.Map.empty[Int, Long] //存放所有的id到文章的映射
 
     val queue = mutable.Queue.empty[(Int, Int)]
     startNodeIds.foreach(id => queue.enqueue((id, 1)))
 
-    val depthCountCache = mutable.Map.empty[Int, Int] //存放每层拥有的文章数量
+    val depthCountCache = mutable.Map.empty[Int, Long] //存放每层拥有的文章数量
 
     var counter = 0
 
@@ -119,15 +119,15 @@ object CategoryHierarchyDb extends Db {
         }
         getCNode(cid) match {
           case Some(node) =>
-            val childCount = node.outlinks.map(countCache.getOrElse(_, 0)).sum
+            val childCount = node.outlinks.map(countCache.getOrElse(_, 0L)).sum
             //更新当前类别的数量，并记录到数据库
-            val count = countCache.getOrElse(cid, 0) + childCount
+            val count = countCache.getOrElse(cid, 0L) + childCount
             countCache.put(cid, count)
             saveArticleCount(cid, count)
 
             //记录深度
             depthCountCache.put(node.depth,
-              depthCountCache.getOrElse(node.depth, 0) + count)
+              depthCountCache.getOrElse(node.depth, 0L) + count)
         }
     }
 
@@ -136,7 +136,7 @@ object CategoryHierarchyDb extends Db {
         println(s"articles in depth $depth:\t $count")
         db.put(metaHandler,
           s"depth:${depth}:articles".getBytes(UTF_8),
-          ByteUtil.int2bytes(count))
+          ByteUtil.long2bytes(count))
     }
 
     println(s"DONE, processed ${ids.size}")
