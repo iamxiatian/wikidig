@@ -78,6 +78,8 @@ object CategoryHierarchyDb extends Db {
     val countCache = mutable.Map.empty[Int, Int] //存放所有的id到文章的映射
     startNodeIds.foreach(id => ids.append(id))
 
+    val depthCountCache = mutable.Map.empty[Int, Int] //存放每层拥有的文章数量
+
     var counter = 0
     val queue = mutable.Queue.empty[(Int, Int)]
     while (queue.nonEmpty) {
@@ -120,7 +122,19 @@ object CategoryHierarchyDb extends Db {
             val count = countCache.getOrElse(cid, 0) + childCount
             countCache.put(cid, count)
             saveArticleCount(cid, count)
+
+            //记录深度
+            depthCountCache.put(node.depth,
+              depthCountCache.getOrElse(node.depth, 0) + count)
         }
+    }
+
+    depthCountCache foreach {
+      case (depth, count) =>
+        println(s"articles in depth $depth:\t $count")
+        db.put(metaHandler,
+          s"depth:${depth}:articles".getBytes(UTF_8),
+          ByteUtil.int2bytes(count))
     }
 
     println(s"DONE, processed ${ids.size}")
