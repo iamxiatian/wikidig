@@ -109,6 +109,15 @@ object CategoryHierarchyDb extends Db {
       }
     }
 
+    //把各个类别以及对应的文章数量，记录到文本文件中
+    val writer = Files.newWriter(new File("./cat.article.count.txt"), UTF_8)
+    writer.write("category\tarticle_count\n")
+    countCache foreach {
+      case( cid, count) =>
+        writer.write(s"$cid\t$count\n")
+    }
+    writer.close()
+
     println("Iterate")
     counter = 0
     ids.reverse.foreach {
