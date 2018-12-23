@@ -22,6 +22,10 @@ import scala.util.Random
 /**
   * wiki层级体系数据库，记录了层级之间的父子关系. 层级体系数据库依赖于CategoryDb主数据库
   * 事先构建成功。(see CategoryDb.build)
+  *
+  * 第一次构建完成父子层级关系后，需要进一步计算每一个节点包含的文章数量，该数值包含该
+  * 节点的子节点的文章数量，合并计算作为当前节点的文章数量。构建时，从最后一个层级的节点
+  * 开始，逐层向上计算，计算结果保存在了"articleCount"列族
   */
 object CategoryHierarchyDb extends Db {
   val LOG = LoggerFactory.getLogger(this.getClass)
@@ -40,7 +44,8 @@ object CategoryHierarchyDb extends Db {
 
   protected val cfNames = Lists.newArrayList[ColumnFamilyDescriptor](
     new ColumnFamilyDescriptor("default".getBytes(UTF_8)),
-    new ColumnFamilyDescriptor("meta".getBytes(UTF_8)) //元数据族
+    new ColumnFamilyDescriptor("meta".getBytes(UTF_8)), //元数据族
+    new ColumnFamilyDescriptor("articleCount".getBytes(UTF_8))
   )
 
   protected val cfHandlers = Lists.newArrayList[ColumnFamilyHandle]
@@ -49,9 +54,76 @@ object CategoryHierarchyDb extends Db {
 
   protected val defaultHandler: ColumnFamilyHandle = cfHandlers.get(0)
   protected val metaHandler: ColumnFamilyHandle = cfHandlers.get(1)
+  protected val articleCountHandler: ColumnFamilyHandle = cfHandlers.get(2)
 
   val Max_Depth = 5
 
+
+  def saveArticleCount(id: Int, count: Int) {
+    db.put(articleCountHandler, ByteUtil.int2bytes(id), ByteUtil.int2bytes(count))
+  }
+
+  def getArticleCount(id: Int): Option[Int] = Option(
+    db.get(articleCountHandler, ByteUtil.int2bytes(id))
+  ).map(ByteUtil.bytes2Int(_))
+
+  /**
+    * 计算各个节点包含的文章数量，其子节点包含的文章数量也合并计算到该节点之中。    *
+    * 因此，需要从底层向上计算。该方法依赖于build()函数事先执行完毕，构建出层次
+    * 关系，才可以二次运行。
+    */
+  def calculateArticleCount(): Unit = {
+    var ids = mutable.ListBuffer.empty[Int] //存放所有的id，深度依次递增
+    val countCache = mutable.Map.empty[Int, Int] //存放所有的id到文章的映射
+    startNodeIds.foreach(id => ids.append(id))
+
+    var counter = 0
+    val queue = mutable.Queue.empty[(Int, Int)]
+    while (queue.nonEmpty) {
+      val (cid, depth) = queue.dequeue()
+
+      val key = ByteUtil.int2bytes(cid)
+
+      getCNode(cid) match {
+        case Some(node) =>
+          counter += 1
+          if (counter % 1000 == 0) {
+            println(s"processing $counter, queue size: ${queue.size}")
+          }
+
+          val count = CategoryDb.getPageCount(cid).getOrElse(0)
+
+          countCache.put(cid, count)
+          ids.append(cid)
+
+          if (depth <= Max_Depth) {
+            node.outlinks.foreach(id => queue.enqueue((id, depth + 1)))
+          }
+        case None =>
+          print("Error")
+      }
+    }
+
+    println("Iterate")
+    counter = 0
+    ids.reverse.foreach {
+      cid =>
+        counter += 1
+        if (counter % 1000 == 0) {
+          println(s"processing $counter / ${ids.size}")
+        }
+        getCNode(cid) match {
+          case Some(node) =>
+            val childCount = node.outlinks.map(countCache.getOrElse(_, 0)).sum
+            //更新当前类别的数量，并记录到数据库
+            val count = countCache.getOrElse(cid, 0) + childCount
+            countCache.put(cid, count)
+            saveArticleCount(cid, count)
+        }
+    }
+
+    println(s"DONE, processed ${ids.size}")
+  }
 
   def accept(name: String): Boolean = {
     val title = name.replaceAll("_", " ").toLowerCase()
