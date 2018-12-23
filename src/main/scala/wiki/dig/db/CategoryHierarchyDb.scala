@@ -76,12 +76,14 @@ object CategoryHierarchyDb extends Db {
   def calculateArticleCount(): Unit = {
     var ids = mutable.ListBuffer.empty[Int] //存放所有的id，深度依次递增
     val countCache = mutable.Map.empty[Int, Int] //存放所有的id到文章的映射
-    startNodeIds.foreach(id => ids.append(id))
+
+    val queue = mutable.Queue.empty[(Int, Int)]
+    startNodeIds.foreach(id => queue.enqueue((id, 1)))
 
     val depthCountCache = mutable.Map.empty[Int, Int] //存放每层拥有的文章数量
 
     var counter = 0
-    val queue = mutable.Queue.empty[(Int, Int)]
+
     while (queue.nonEmpty) {
       val (cid, depth) = queue.dequeue()
 
