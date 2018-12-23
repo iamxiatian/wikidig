@@ -16,10 +16,6 @@ class PathGenerator {
   }
 
   def main(args: Array[String]): Unit = {
-    println("Prepare to calculate article count...")
-    StdIn.readLine()
 
-    CategoryHierarchyDb.calculateArticleCount()
-    CategoryHierarchyDb.close()
   }
 }

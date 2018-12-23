@@ -17,6 +17,7 @@ import wiki.dig.util.ByteUtil
 import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import scala.io.StdIn
 import scala.util.Random
 
 /**
@@ -521,7 +522,12 @@ object CategoryHierarchyDb extends Db {
   }
 
   def main(args: Array[String]): Unit = {
-    output(new File("./categories.txt"))
+    //output(new File("./categories.txt"))
+    println("Prepare to calculate article count...")
+    StdIn.readLine()
+
+    CategoryHierarchyDb.calculateArticleCount()
+    CategoryHierarchyDb.close()
   }
 }
 
