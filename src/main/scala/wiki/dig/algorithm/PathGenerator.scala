@@ -20,5 +20,6 @@ class PathGenerator {
     StdIn.readLine()
 
     CategoryHierarchyDb.calculateArticleCount()
+    CategoryHierarchyDb.close()
   }
 }

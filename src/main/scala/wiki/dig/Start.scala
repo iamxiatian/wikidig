@@ -81,6 +81,7 @@ object Start extends App {
 
       if (config.buildHierarchy) {
         CategoryHierarchyDb.build()
+        CategoryHierarchyDb.calculateArticleCount()
         CategoryHierarchyDb.close()
       }
 
