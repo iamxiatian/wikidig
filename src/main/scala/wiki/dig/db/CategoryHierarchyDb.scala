@@ -74,7 +74,7 @@ object CategoryHierarchyDb extends Db {
     * 关系，才可以二次运行。
     */
   def calculateArticleCount(): Unit = {
-    var ids = mutable.ListBuffer.empty[Int] //存放所有的id，深度依次递增
+    val ids = mutable.ListBuffer.empty[Int] //存放所有的id，深度依次递增
     val countCache = mutable.Map.empty[Int, Long] //存放所有的id到文章的映射
 
     val queue = mutable.Queue.empty[(Int, Int)]
@@ -99,7 +99,10 @@ object CategoryHierarchyDb extends Db {
           val count = CategoryDb.getPageCount(cid).getOrElse(0)
 
           countCache.put(cid, count)
-          ids.append(cid)
+
+          //无重复的记录出现的ID
+          if(!ids.contains(cid))
+            ids.append(cid)
 
           if (depth <= Max_Depth) {
             node.outlinks.foreach(id => queue.enqueue((id, depth + 1)))
@@ -110,13 +113,13 @@ object CategoryHierarchyDb extends Db {
     }
 
     //把各个类别以及对应的文章数量，记录到文本文件中
-    val writer = Files.newWriter(new File("./cat.article.count.txt"), UTF_8)
-    writer.write("category\tarticle_count\n")
-    countCache foreach {
-      case( cid, count) =>
-        writer.write(s"$cid\t$count\n")
-    }
-    writer.close()
+//    val writer = Files.newWriter(new File("./cat.article.count.txt"), UTF_8)
+//    writer.write("category\tarticle_count\n")
+//    countCache foreach {
+//      case( cid, count) =>
+//        writer.write(s"$cid\t$count\n")
+//    }
+//    writer.close()
 
     println("Iterate")
     counter = 0
