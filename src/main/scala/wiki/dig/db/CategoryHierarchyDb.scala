@@ -175,7 +175,7 @@ object CategoryHierarchyDb extends Db with DbHelper {
             ids.append(cid)
 
             if (depth <= Max_Depth) {
-              node.outlinks.foreach {
+              node.childLinks.foreach {
                 id =>
                   queue.enqueue((id, depth + 1))
                   //记录父节点
@@ -211,7 +211,7 @@ object CategoryHierarchyDb extends Db with DbHelper {
         }
         getCNode(cid) match {
           case Some(node) =>
-            val childCount = node.outlinks.map {
+            val childCount = node.childLinks.map {
               child =>
                 //子节点的文章数量，需要平分到父节点上
                 val c: Long = articleCountCache.get(child)
@@ -674,6 +674,15 @@ case class CNode(depth: Int,
                  outlinks: Seq[Int],
                  weights: Seq[Int]
                 ) {
+
+  /**
+    * 获取当前节点的子节点，即出链并且深度为当前深度+1的类别
+    */
+  val childLinks: Seq[Int] = outlinks.filter {
+    child =>
+      CategoryHierarchyDb.getCNode(child).map(_.depth == depth + 1).getOrElse(false)
+  }
+
   def toBytes(): Array[Byte] = {
     val out = new ByteArrayOutputStream()
     val dos = new DataOutputStream(out)
