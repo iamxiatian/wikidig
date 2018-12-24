@@ -9,7 +9,7 @@ import scala.util.Random
   * 在每一级别上，以随机概率判断是否停止跳跃。
   *
   */
-class PathGenerator {
+object PathGenerator {
 
   def randomWalk(): Unit = {
     val depthNumbers: Seq[Int] = (1 to 6).toSeq
@@ -86,6 +86,6 @@ class PathGenerator {
   }
 
   def main(args: Array[String]): Unit = {
-
+    randomWalk()
   }
 }
