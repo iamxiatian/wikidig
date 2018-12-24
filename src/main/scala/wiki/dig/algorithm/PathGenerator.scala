@@ -25,9 +25,13 @@ object PathGenerator {
       _ =>
         //本次生成的路径长度
         val pathLength = pick(depthNumbers, directCountDist)
+        println(s"path length: $pathLength")
         val cids = generatePath(pathLength)
 
         val articleIds = CategoryDb.getPages(cids.last)
+        println(s"cids: $cids")
+        println(s"article ids: $articleIds")
+
         val rand = Random.nextInt(articleIds.length)
         val pickedArticleId = articleIds(rand)
 
