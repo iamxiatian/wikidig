@@ -678,9 +678,11 @@ case class CNode(depth: Int,
   /**
     * 获取当前节点的子节点，即出链并且深度为当前深度+1的类别
     */
-  val childLinks: Seq[Int] = outlinks.filter {
+  def childLinks: Seq[Int] = outlinks.filter {
     child =>
-      CategoryHierarchyDb.getCNode(child).map(_.depth == depth + 1).getOrElse(false)
+      CategoryHierarchyDb.getCNode(child)
+        .map(_.depth == depth + 1)
+        .getOrElse(false)
   }
 
   def toBytes(): Array[Byte] = {
