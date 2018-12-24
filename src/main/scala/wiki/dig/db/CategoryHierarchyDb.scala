@@ -69,6 +69,17 @@ object CategoryHierarchyDb extends Db {
   ).map(ByteUtil.bytes2Long(_))
 
   /**
+    * 获取深度为depth的所有节点拥有的文章总数量
+    *
+    * @param depth
+    * @return
+    */
+  def articleCountAtDepth(depth: Int): Long = Option(
+    db.get(metaHandler, s"depth:${depth}:articles".getBytes(UTF_8))
+  ).map(ByteUtil.bytes2Long(_))
+    .getOrElse(0)
+
+  /**
     * 计算各个节点包含的文章数量，其子节点包含的文章数量也合并计算到该节点之中。    *
     * 因此，需要从底层向上计算。该方法依赖于build()函数事先执行完毕，构建出层次
     * 关系，才可以二次运行。
@@ -96,16 +107,15 @@ object CategoryHierarchyDb extends Db {
             println(s"processing $counter, queue size: ${queue.size}")
           }
 
-          val count = CategoryDb.getPageCount(cid).getOrElse(0)
-
-          countCache.put(cid, count)
-
           //无重复的记录出现的ID
-          if(!ids.contains(cid))
+          if (!countCache.contains(cid)) {
+            val count = CategoryDb.getPageCount(cid).getOrElse(0)
+            countCache.put(cid, count)
             ids.append(cid)
 
-          if (depth <= Max_Depth) {
-            node.outlinks.foreach(id => queue.enqueue((id, depth + 1)))
+            if (depth <= Max_Depth) {
+              node.outlinks.foreach(id => queue.enqueue((id, depth + 1)))
+            }
           }
         case None =>
           print("Error")
@@ -113,13 +123,13 @@ object CategoryHierarchyDb extends Db {
     }
 
     //把各个类别以及对应的文章数量，记录到文本文件中
-//    val writer = Files.newWriter(new File("./cat.article.count.txt"), UTF_8)
-//    writer.write("category\tarticle_count\n")
-//    countCache foreach {
-//      case( cid, count) =>
-//        writer.write(s"$cid\t$count\n")
-//    }
-//    writer.close()
+    //    val writer = Files.newWriter(new File("./cat.article.count.txt"), UTF_8)
+    //    writer.write("category\tarticle_count\n")
+    //    countCache foreach {
+    //      case( cid, count) =>
+    //        writer.write(s"$cid\t$count\n")
+    //    }
+    //    writer.close()
 
     println("Iterate")
     counter = 0
