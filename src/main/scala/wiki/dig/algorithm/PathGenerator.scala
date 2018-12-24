@@ -12,19 +12,10 @@ class PathGenerator {
   def randomWalk(): Unit = {
     //在第几层停止跳转
     val depthDist = (1 to 5).map {
-      d => (d, CategoryHierarchyDb.articleCountAtDepth(d))
+      d => (d, CategoryHierarchyDb.articleCountAtDepth(d).get)
     }.toMap
 
-    val total = depthDist.map(_._2).sum
-
-
-
-    val d1 = CategoryHierarchyDb.articleCountAtDepth(1)
-    val d2 = CategoryHierarchyDb.articleCountAtDepth(2)
-    val d3 = CategoryHierarchyDb.articleCountAtDepth(3)
-    val d4 = CategoryHierarchyDb.articleCountAtDepth(4)
-    val d5 = CategoryHierarchyDb.articleCountAtDepth(5)
-
+    val total = depthDist.map(_._2.directCount).sum
 
     val stopDepth = 5
   }

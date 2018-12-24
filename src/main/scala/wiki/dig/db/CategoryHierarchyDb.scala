@@ -69,13 +69,43 @@ object CategoryHierarchyDb extends Db with DbHelper {
   val Max_Depth = 5
 
 
-  def saveArticleCount(id: Int, count: Long) {
-    db.put(articleCountHandler, ByteUtil.int2bytes(id), ByteUtil.long2bytes(count))
+  case class AcTuple(var directCount: Int, var recursiveCount: Long = 0) {
+    def toBytes: Array[Byte] = {
+      val out = new ByteArrayOutputStream()
+      val dos = new DataOutputStream(out)
+      dos.writeInt(directCount)
+      dos.writeLong(recursiveCount)
+      dos.close()
+      out.close()
+      out.toByteArray
+    }
+
+    def +(o: AcTuple) = AcTuple(directCount + o.directCount,
+      recursiveCount + o.recursiveCount)
   }
 
-  def getArticleCount(id: Int): Option[Long] = Option(
+  object AcTuple {
+    def apply(bytes: Array[Byte]): AcTuple = {
+      val din = new DataInputStream(new ByteArrayInputStream(bytes))
+      val directCount = din.readInt()
+      val recursiveCount = din.readLong()
+      din.close()
+      AcTuple(directCount, recursiveCount)
+    }
+
+    def empty = AcTuple(0, 0L)
+  }
+
+  def saveArticleCount(id: Int, count: AcTuple) {
+    db.put(articleCountHandler, ByteUtil.int2bytes(id), count.toBytes)
+  }
+
+  def getArticleCount(id: Int): Option[AcTuple] = Option(
     db.get(articleCountHandler, ByteUtil.int2bytes(id))
-  ).map(ByteUtil.bytes2Long(_))
+  ).map {
+    bytes =>
+      AcTuple(bytes)
+  }
 
   /**
     * 获取深度为depth的所有节点拥有的文章总数量
@@ -83,10 +113,9 @@ object CategoryHierarchyDb extends Db with DbHelper {
     * @param depth
     * @return
     */
-  def articleCountAtDepth(depth: Int): Long = Option(
+  def articleCountAtDepth(depth: Int): Option[AcTuple] = Option(
     db.get(metaHandler, s"depth:${depth}:articles".getBytes(UTF_8))
-  ).map(ByteUtil.bytes2Long(_))
-    .getOrElse(0)
+  ).map(AcTuple(_))
 
   /**
     * 获取一个节点所有的父节点
@@ -108,8 +137,15 @@ object CategoryHierarchyDb extends Db with DbHelper {
     */
   def calculateArticleCount(): Unit = {
     val ids = mutable.ListBuffer.empty[Int] //存放所有的id，深度依次递增
-    val countCache = mutable.Map.empty[Int, Long] //存放所有的id到文章的映射
-    val parentCache = mutable.Map.empty[Int, mutable.Set[Int]] //存放所有的id到父节点的映射
+
+    //存放分类id拥有的文章数量（包含子类）、不包含子类的文章数量
+    val articleCountCache = mutable.Map.empty[Int, AcTuple]
+
+    //存放所有的id到父节点的映射
+    val parentCache = mutable.Map.empty[Int, mutable.Set[Int]]
+
+    //存放每层拥有的文章数量
+    val depthCountCache = mutable.Map.empty[Int, AcTuple]
 
     val queue = mutable.Queue.empty[(Int, Int)]
     startNodeIds.foreach {
@@ -117,8 +153,6 @@ object CategoryHierarchyDb extends Db with DbHelper {
         queue.enqueue((id, 1))
         parentCache.put(id, mutable.Set.empty[Int])
     }
-
-    val depthCountCache = mutable.Map.empty[Int, Long] //存放每层拥有的文章数量
 
     var counter = 0
 
@@ -135,9 +169,9 @@ object CategoryHierarchyDb extends Db with DbHelper {
           }
 
           //无重复的记录出现的ID
-          if (!countCache.contains(cid)) {
+          if (!articleCountCache.contains(cid)) {
             val count = CategoryDb.getPageCount(cid).getOrElse(0)
-            countCache.put(cid, count)
+            articleCountCache.put(cid, AcTuple(count, 0))
             ids.append(cid)
 
             if (depth <= Max_Depth) {
@@ -180,18 +214,26 @@ object CategoryHierarchyDb extends Db with DbHelper {
             val childCount = node.outlinks.map {
               child =>
                 //子节点的文章数量，需要平分到父节点上
-                val c: Long = countCache.getOrElse(child, 0L)
-                val parentCount: Int = parentCache.get(child).map(_.size).getOrElse(1)
+                val c: Long = articleCountCache.get(child)
+                  .map(_.recursiveCount)
+                  .getOrElse(0)
+                val parentCount: Int = parentCache.get(child)
+                  .map(_.size)
+                  .getOrElse(1)
                 c / parentCount
             }.sum
             //更新当前类别的数量，并记录到数据库
-            val count = countCache.getOrElse(cid, 0L) + childCount
-            countCache.put(cid, count)
-            saveArticleCount(cid, count)
+            val count = articleCountCache.get(cid)
+              .map(_.directCount)
+              .getOrElse(0)
+
+            val tuple = AcTuple(count, count + childCount)
+            articleCountCache.put(cid, tuple)
+            saveArticleCount(cid, tuple)
 
             //记录深度
             depthCountCache.put(node.depth,
-              depthCountCache.getOrElse(node.depth, 0L) + count)
+              depthCountCache.getOrElse(node.depth, AcTuple.empty) + tuple)
         }
     }
 
@@ -208,7 +250,7 @@ object CategoryHierarchyDb extends Db with DbHelper {
         println(s"articles in depth $depth:\t $count")
         db.put(metaHandler,
           s"depth:${depth}:articles".getBytes(UTF_8),
-          ByteUtil.long2bytes(count))
+          count.toBytes)
     }
 
     println(s"DONE, processed ${ids.size}")
