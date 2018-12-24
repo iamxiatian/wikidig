@@ -1,5 +1,9 @@
 package wiki.dig.algorithm
 
+import java.io.File
+import java.nio.charset.StandardCharsets
+
+import com.google.common.io.Files
 import wiki.dig.db.{CategoryDb, CategoryHierarchyDb}
 
 import scala.util.Random
@@ -11,7 +15,9 @@ import scala.util.Random
   */
 object PathGenerator {
 
-  def randomWalk(): Unit = {
+  import StandardCharsets.UTF_8
+
+  def randomWalk(N: Int): Unit = {
     val depthNumbers: Seq[Int] = (1 to 6).toSeq
 
     //在第几层停止跳转
@@ -21,22 +27,28 @@ object PathGenerator {
 
     val directCountDist: Seq[Int] = depthDist.map(_._2.directCount).toSeq
 
-    (1 to 100) foreach {
-      _ =>
-        //本次生成的路径长度
-        val pathLength = pick(depthNumbers, directCountDist)
-        println(s"path length: $pathLength")
-        val cids = generatePath(pathLength)
+    val writer = Files.newWriter(new File("./path.txt"), UTF_8)
 
-        val articleIds = CategoryDb.getPages(cids.last)
-        println(s"cids: $cids")
-        println(s"article ids: $articleIds")
+    var count = 0
+    while (count < N) {
+      //本次生成的路径长度
+      val pathLength = pick(depthNumbers, directCountDist)
 
+      val cids = generatePath(if (pathLength > 2) pathLength else 3)
+
+      val articleIds = CategoryDb.getPages(cids.last)
+      if (articleIds.nonEmpty) {
+        count += 1
         val rand = Random.nextInt(articleIds.length)
         val pickedArticleId = articleIds(rand)
-
-        println(s"$pickedArticleId\t$cids")
+        writer.write(s"$pickedArticleId\t${cids.mkString("\t")}\n")
+        if (count % 500 == 0) {
+          println(s"$count / $N ")
+          writer.flush()
+        }
+      }
     }
+    writer.close()
   }
 
   def generatePath(pathLength: Int): Seq[Int] = {
@@ -90,6 +102,10 @@ object PathGenerator {
   }
 
   def main(args: Array[String]): Unit = {
-    randomWalk()
+    if (args.length == 0) {
+      println("Usage: path-generator numbers")
+    } else {
+      randomWalk(args(0).toInt)
+    }
   }
 }
