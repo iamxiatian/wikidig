@@ -87,18 +87,22 @@ object PathGenerator {
     */
   def pick(elements: Seq[Int], weights: Seq[Int]): Int = {
     val total = weights.sum
-    val randNumber = Random.nextInt(total)
-    var accumulator = 0
+    if (total == 0) {
+      elements(Random.nextInt(elements.size))
+    } else {
+      val randNumber = Random.nextInt(total)
+      var accumulator = 0
 
-    elements.zip(weights).find {
-      case (e, w) =>
-        if (w + accumulator > randNumber)
-          true
-        else {
-          accumulator += w
-          false
-        }
-    }.map(_._1).getOrElse(elements.head)
+      elements.zip(weights).find {
+        case (e, w) =>
+          if (w + accumulator > randNumber)
+            true
+          else {
+            accumulator += w
+            false
+          }
+      }.map(_._1).getOrElse(elements.head)
+    }
   }
 
   def main(args: Array[String]): Unit = {
