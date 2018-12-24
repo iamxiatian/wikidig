@@ -10,7 +10,7 @@ import org.apache.commons.lang3.StringUtils
 import org.rocksdb._
 import org.slf4j.LoggerFactory
 import wiki.dig.common.MyConf
-import wiki.dig.db.ast.Db
+import wiki.dig.db.ast.{Db, DbHelper}
 import wiki.dig.repo.CategoryRepo
 import wiki.dig.util.ByteUtil
 
@@ -24,11 +24,18 @@ import scala.util.Random
   * wiki层级体系数据库，记录了层级之间的父子关系. 层级体系数据库依赖于CategoryDb主数据库
   * 事先构建成功。(see CategoryDb.build)
   *
+  * 默认列族(default): 记录每个节点及其子节点信息；
+  *
+  * meta列族：记录元数据，包括：每一层拥有的文章总数量
+  *
+  * articleCount列族：记录每一个节点拥有的文章数量。
   * 第一次构建完成父子层级关系后，需要进一步计算每一个节点包含的文章数量，该数值包含该
   * 节点的子节点的文章数量，合并计算作为当前节点的文章数量。构建时，从最后一个层级的节点
-  * 开始，逐层向上计算，计算结果保存在了"articleCount"列族
+  * 开始，逐层向上计算，计算结果保存在了"articleCount"列族.
+  *
+  * parentCount列族：记录每一个节点拥有的父节点数量
   */
-object CategoryHierarchyDb extends Db {
+object CategoryHierarchyDb extends Db with DbHelper {
   val LOG = LoggerFactory.getLogger(this.getClass)
 
   import StandardCharsets.UTF_8
@@ -46,7 +53,8 @@ object CategoryHierarchyDb extends Db {
   protected val cfNames = Lists.newArrayList[ColumnFamilyDescriptor](
     new ColumnFamilyDescriptor("default".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("meta".getBytes(UTF_8)), //元数据族
-    new ColumnFamilyDescriptor("articleCount".getBytes(UTF_8))
+    new ColumnFamilyDescriptor("articleCount".getBytes(UTF_8)),
+    new ColumnFamilyDescriptor("parentCount".getBytes(UTF_8))
   )
 
   protected val cfHandlers = Lists.newArrayList[ColumnFamilyHandle]
@@ -56,6 +64,7 @@ object CategoryHierarchyDb extends Db {
   protected val defaultHandler: ColumnFamilyHandle = cfHandlers.get(0)
   protected val metaHandler: ColumnFamilyHandle = cfHandlers.get(1)
   protected val articleCountHandler: ColumnFamilyHandle = cfHandlers.get(2)
+  protected val parentCountHandler: ColumnFamilyHandle = cfHandlers.get(3)
 
   val Max_Depth = 5
 
@@ -80,6 +89,19 @@ object CategoryHierarchyDb extends Db {
     .getOrElse(0)
 
   /**
+    * 获取一个节点所有的父节点
+    *
+    * @param cid
+    * @return
+    */
+  def getParentIds(cid: Int): Seq[Int] = Option(
+    db.get(parentCountHandler, ByteUtil.int2bytes(cid))
+  ) match {
+    case Some(value) => readIntSeqFromBytes(value)
+    case None => Seq.empty[Int]
+  }
+
+  /**
     * 计算各个节点包含的文章数量，其子节点包含的文章数量也合并计算到该节点之中。    *
     * 因此，需要从底层向上计算。该方法依赖于build()函数事先执行完毕，构建出层次
     * 关系，才可以二次运行。
@@ -87,9 +109,14 @@ object CategoryHierarchyDb extends Db {
   def calculateArticleCount(): Unit = {
     val ids = mutable.ListBuffer.empty[Int] //存放所有的id，深度依次递增
     val countCache = mutable.Map.empty[Int, Long] //存放所有的id到文章的映射
+    val parentCache = mutable.Map.empty[Int, mutable.Set[Int]] //存放所有的id到父节点的映射
 
     val queue = mutable.Queue.empty[(Int, Int)]
-    startNodeIds.foreach(id => queue.enqueue((id, 1)))
+    startNodeIds.foreach {
+      id =>
+        queue.enqueue((id, 1))
+        parentCache.put(id, mutable.Set.empty[Int])
+    }
 
     val depthCountCache = mutable.Map.empty[Int, Long] //存放每层拥有的文章数量
 
@@ -114,7 +141,16 @@ object CategoryHierarchyDb extends Db {
             ids.append(cid)
 
             if (depth <= Max_Depth) {
-              node.outlinks.foreach(id => queue.enqueue((id, depth + 1)))
+              node.outlinks.foreach {
+                id =>
+                  queue.enqueue((id, depth + 1))
+                  //记录父节点
+                  if (parentCache.contains(id)) {
+                    parentCache(id) += cid
+                  } else {
+                    parentCache.put(id, mutable.Set(cid))
+                  }
+              }
             }
           }
         case None =>
@@ -141,7 +177,13 @@ object CategoryHierarchyDb extends Db {
         }
         getCNode(cid) match {
           case Some(node) =>
-            val childCount = node.outlinks.map(countCache.getOrElse(_, 0L)).sum
+            val childCount = node.outlinks.map {
+              child =>
+                //子节点的文章数量，需要平分到父节点上
+                val c: Long = countCache.getOrElse(child, 0L)
+                val parentCount: Int = parentCache.get(child).map(_.size).getOrElse(1)
+                c / parentCount
+            }.sum
             //更新当前类别的数量，并记录到数据库
             val count = countCache.getOrElse(cid, 0L) + childCount
             countCache.put(cid, count)
@@ -151,6 +193,14 @@ object CategoryHierarchyDb extends Db {
             depthCountCache.put(node.depth,
               depthCountCache.getOrElse(node.depth, 0L) + count)
         }
+    }
+
+    parentCache.foreach {
+      case (cid, parents) =>
+        db.put(parentCountHandler,
+          ByteUtil.int2bytes(cid),
+          getBytesFromIntSeq(parents)
+        )
     }
 
     depthCountCache foreach {
