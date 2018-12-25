@@ -31,7 +31,7 @@ object PathGenerator {
 
     depthNumbers.zip(directCountDist).foreach {
       case (d, c) =>
-        println(s"articles on depth $d ==> c")
+        println(s"articles on depth $d ==> $c")
     }
 
     var count = 0
@@ -51,6 +51,8 @@ object PathGenerator {
           println(s"$count / $N ")
           writer.flush()
         }
+      } else {
+        println(s"empty articles: path len: $pathLength, category: ${cids.last}")
       }
     }
     writer.close()
