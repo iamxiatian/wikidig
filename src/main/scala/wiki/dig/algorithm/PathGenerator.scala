@@ -25,9 +25,14 @@ object PathGenerator {
       d => (d, CategoryHierarchyDb.articleCountAtDepth(d).get)
     }.toMap
 
-    val directCountDist: Seq[Int] = depthDist.map(_._2.directCount).toSeq
+    val directCountDist: Seq[Long] = depthDist.map(_._2.directCount.toLong).toSeq
 
     val writer = Files.newWriter(new File("./path.txt"), UTF_8)
+
+    depthNumbers.zip(directCountDist).foreach {
+      case (d, c) =>
+        println(s"articles on depth $d ==> c")
+    }
 
     var count = 0
     while (count < N) {
@@ -42,7 +47,7 @@ object PathGenerator {
         val rand = Random.nextInt(articleIds.length)
         val pickedArticleId = articleIds(rand)
         writer.write(s"$pickedArticleId\t${cids.mkString("\t")}\n")
-        if (count % 500 == 0) {
+        if (count % 1000 == 0) {
           println(s"$count / $N ")
           writer.flush()
         }
@@ -62,9 +67,8 @@ object PathGenerator {
       else {
         val weights = nodeIds.map {
           id =>
-            CategoryHierarchyDb.getArticleCount(id).map(_.recursiveCount.toInt).getOrElse(0)
+            CategoryHierarchyDb.getArticleCount(id).map(_.recursiveCount).getOrElse(0)
         }
-
         val id = pick(nodeIds, weights)
         val childNodes = CategoryHierarchyDb.getCNode(id).get.childLinks
         (id, childNodes)
@@ -85,20 +89,21 @@ object PathGenerator {
     * 根据随机数，挑选一个落在权重范围里面的元素。例如：elements为[1,2,3,4,5]，
     * 权重为[100,3,2,10,9]， 生成的随机数为3，则落在第一个元素上，返回第一个元素1.
     */
-  def pick(elements: Seq[Int], weights: Seq[Int]): Int = {
+  def pick(elements: Seq[Int], weights: Seq[Long]): Int = {
     val total = weights.sum
     if (total == 0) {
       elements(Random.nextInt(elements.size))
     } else {
-      val randNumber = Random.nextInt(total)
-      var accumulator = 0
+      val randNumber = Random.nextDouble()
+      val scores = weights.map(_ / (total.toDouble))
+      var accumulator = 0.0
 
-      elements.zip(weights).find {
-        case (e, w) =>
-          if (w + accumulator > randNumber)
+      elements.zip(scores).find {
+        case (e, s) =>
+          if (s + accumulator > randNumber)
             true
           else {
-            accumulator += w
+            accumulator += s
             false
           }
       }.map(_._1).getOrElse(elements.head)
