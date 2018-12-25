@@ -65,9 +65,9 @@ object PathGenerator {
       if (nodeIds.isEmpty)
         (0, Seq.empty[Int])
       else {
-        val weights = nodeIds.map {
+        val weights: Seq[Long] = nodeIds.map {
           id =>
-            CategoryHierarchyDb.getArticleCount(id).map(_.recursiveCount).getOrElse(0)
+            CategoryHierarchyDb.getArticleCount(id).map(_.recursiveCount).getOrElse(0L)
         }
         val id = pick(nodeIds, weights)
         val childNodes = CategoryHierarchyDb.getCNode(id).get.childLinks
