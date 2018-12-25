@@ -654,7 +654,7 @@ object CategoryHierarchyDb extends Db with DbHelper {
   def main(args: Array[String]): Unit = {
     //output(new File("./categories.txt"))
     println("Prepare to calculate article count...")
-    StdIn.readLine()
+    //StdIn.readLine()
 
     CategoryHierarchyDb.calculateArticleCount()
     CategoryHierarchyDb.close()
