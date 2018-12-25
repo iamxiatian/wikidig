@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets
 import com.google.common.collect.Lists
 import org.rocksdb._
 import org.slf4j.LoggerFactory
+import org.zhinang.util.StringUtils
 import wiki.dig.common.MyConf
 import wiki.dig.db.ast.{Db, DbHelper}
 import wiki.dig.repo.{CategoryInlinkRepo, CategoryOutlinkRepo, CategoryPageRepo, CategoryRepo}
@@ -174,8 +175,23 @@ object CategoryDb extends Db with DbHelper {
   }
 
   def main(args: Array[String]): Unit = {
-    val id = CategoryDb.getIdByName("Culture")
-    println(id)
-    CategoryDb.close()
+    if (args.length == 0) {
+      println("Usage: category-db id or name")
+    } else {
+      if (StringUtils.isNumber(args(0))) {
+        val id = args(0).toInt
+        val name = getNameById(id)
+        val pages = getPages(id)
+        println(s"$id\t${name.getOrElse("<empty>")}")
+        println(s"\t${pages.mkString(" ")}")
+      } else {
+        val name = args(0).trim
+        val id = getIdByName(name)
+        val pages = if (id.isEmpty) Seq.empty[Int] else getPages(id.get)
+        println(s"${id.map(_.toString).getOrElse("<empty>")}\t$name")
+        println(s"\t${pages.mkString(" ")}")
+      }
+      CategoryDb.close()
+    }
   }
 }
