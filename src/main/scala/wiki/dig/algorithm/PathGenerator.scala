@@ -21,11 +21,10 @@ object PathGenerator {
     val depthNumbers: Seq[Int] = (1 to 6).toSeq
 
     //在第几层停止跳转
-    val depthDist = depthNumbers.map {
-      d => (d, CategoryHierarchyDb.articleCountAtDepth(d).get)
-    }.toMap
-
-    val directCountDist: Seq[Long] = depthDist.map(_._2.directCount.toLong).toSeq
+    val directCountDist: Seq[Long] = depthNumbers.map {
+      d =>
+        CategoryHierarchyDb.articleCountAtDepth(d).get.directCount.toLong
+    }
 
     val writer = Files.newWriter(new File("./path.txt"), UTF_8)
 
