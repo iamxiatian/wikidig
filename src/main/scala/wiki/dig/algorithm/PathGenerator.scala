@@ -51,7 +51,7 @@ object PathGenerator {
           writer.flush()
         }
       } else {
-        println(s"empty articles: path len: $pathLength, category: ${cids.last}")
+        //println(s"empty articles: path len: $pathLength, category: ${cids.last}")
       }
     }
     writer.close()
