@@ -17,7 +17,6 @@ import wiki.dig.util.ByteUtil
 import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.io.StdIn
 import scala.util.Random
 
 /**
@@ -406,11 +405,16 @@ object CategoryHierarchyDb extends Db with DbHelper {
 
   /**
     * 按照如下方式把层级信息输出到文本文件中：
+    *
+    * brief = true:
+    * cate_id  cate_name
+    *
+    * brief = false:
     * cate_id  cate_name cate_level cate1_id cate2_id cate3_id cate4_id
     *
     * @param f
     */
-  def output(f: File) = {
+  def output(f: File, brief: Boolean = false) = {
     val writer = Files.newWriter(f, UTF_8)
     val queue = mutable.Queue.empty[(Int, Int)]
     startNodeIds.foreach(id => queue.enqueue((id, 1)))
@@ -429,11 +433,14 @@ object CategoryHierarchyDb extends Db with DbHelper {
             writer.flush()
           }
           val name = CategoryDb.getNameById(cid).getOrElse("")
-          writer.write(s"$cid, ${name}, ${node.depth}, ")
-          writer.write(node.outlinks.mkString(", "))
+          writer.write(s"$cid\t${name}")
+          if (brief == false) {
+            writer.write(s"\t${node.depth}\t")
+            writer.write(node.outlinks.mkString(", "))
+          }
           writer.write("\n")
 
-          //继续后续抽样处理
+          //继续后续处理
           if (depth <= Max_Depth) {
             node.outlinks.foreach(id => queue.enqueue((id, depth + 1)))
           }
@@ -652,11 +659,12 @@ object CategoryHierarchyDb extends Db with DbHelper {
   }
 
   def main(args: Array[String]): Unit = {
-    //output(new File("./categories.txt"))
-    println("Prepare to calculate article count...")
+    output(new File("./all.category.names.txt"), true)
+
+    //println("Prepare to calculate article count...")
     //StdIn.readLine()
 
-    CategoryHierarchyDb.calculateArticleCount()
+    //CategoryHierarchyDb.calculateArticleCount()
     CategoryHierarchyDb.close()
   }
 }
