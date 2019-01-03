@@ -4,6 +4,7 @@ import java.io._
 import java.nio.charset.StandardCharsets
 
 import com.google.common.collect.Lists
+import org.apache.commons.lang3.StringUtils
 import org.rocksdb._
 import org.slf4j.LoggerFactory
 import wiki.dig.common.MyConf
@@ -13,6 +14,7 @@ import wiki.dig.util.ByteUtil
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import scala.io.Source
 
 /**
   * 把Page的信息保存到RocksDB数据库中，里面记录的信息包括：
@@ -241,5 +243,49 @@ object PageDb extends Db with DbHelper {
     cfHandlers.forEach(h => h.close())
     db.close()
     println("DONE.")
+  }
+
+
+  def main(args: Array[String]): Unit = {
+    case class Config(inFile: Option[File] = None,
+                      outFile: Option[File] = None,
+                      show: Option[String] = None)
+
+    val parser = new scopt.OptionParser[Config]("bin/page-content-db") {
+      head("output page content from id text file.")
+
+      opt[File]('i', "inFile").optional().action((x, c) =>
+        c.copy(inFile = Some(x))).text("input file of page id lines")
+
+      opt[File]('o', "outFile").optional().action((x, c) =>
+        c.copy(outFile = Some(x))).text("output file of page id and content")
+
+      opt[String]("show").optional().action((x, c) =>
+        c.copy(show = Some(x))).text("show page content by id/name")
+    }
+
+    parser.parse(args, Config()) match {
+      case Some(config) =>
+        if (config.inFile.nonEmpty && config.outFile.nonEmpty) {
+          val it = Source.fromFile(config.inFile.get).getLines()
+          PageContentDb.output(it, config.outFile.get)
+          LOG.info("DONE.")
+        } else if (config.show.nonEmpty) {
+          val idOrName = config.show.get
+          val (id, name) = if(StringUtils.isNumeric(idOrName)) {
+            (idOrName.toInt, getNameById(id).getOrElse("<EMPTY>"))
+          } else {
+            (getIdByName(idOrName).getOrElse(0), idOrName)
+          }
+          val content = PageContentDb.getContent(id).getOrElse("<EMPTY>")
+          println(s"$id\t\t\t$name")
+          println("---------------")
+          println(content)
+        } else {
+          parser.showUsage()
+        }
+      case None =>
+        println( """Wrong parameters :(""".stripMargin)
+    }
   }
 }

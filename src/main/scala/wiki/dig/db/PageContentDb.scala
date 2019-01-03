@@ -16,7 +16,6 @@ import wiki.dig.util.ByteUtil
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.io.Source
 
 /**
   * 把Page的内容信息保存到RocksDB数据库中，里面记录的信息包括：
@@ -111,29 +110,5 @@ object PageContentDb extends Db {
       }
     writer.close()
     LOG.info("output completed.")
-  }
-
-  def main(args: Array[String]): Unit = {
-    case class Config(inFile: File = null, outFile: File = null)
-
-    val parser = new scopt.OptionParser[Config]("bin/page-content-db") {
-      head("output page content from id text file.")
-
-      opt[File]('i', "inFile").required().action((x, c) =>
-        c.copy(inFile = x)).text("input file of page id lines")
-
-      opt[File]('o', "outFile").required().action((x, c) =>
-        c.copy(outFile = x)).text("output file of page id and content")
-    }
-
-
-    parser.parse(args, Config()) match {
-      case Some(config) =>
-        val it = Source.fromFile(config.inFile).getLines()
-        output(it, config.outFile)
-        LOG.info("DONE.")
-      case None =>
-        println( """Wrong parameters :(""".stripMargin)
-    }
   }
 }
