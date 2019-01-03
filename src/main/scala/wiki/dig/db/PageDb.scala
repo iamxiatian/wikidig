@@ -272,8 +272,8 @@ object PageDb extends Db with DbHelper {
           LOG.info("DONE.")
         } else if (config.show.nonEmpty) {
           val idOrName = config.show.get
-          val (id, name) = if(StringUtils.isNumeric(idOrName)) {
-            (idOrName.toInt, getNameById(id).getOrElse("<EMPTY>"))
+          val (id: Int, name: String) = if (StringUtils.isNumeric(idOrName)) {
+            (idOrName.toInt, getNameById(idOrName.toInt).getOrElse("<EMPTY>"))
           } else {
             (getIdByName(idOrName).getOrElse(0), idOrName)
           }
