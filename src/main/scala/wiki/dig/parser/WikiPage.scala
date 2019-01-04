@@ -16,33 +16,35 @@ object WikiPage {
     *
     * @param wikiContent
     */
-  def getPlainText(wikiContent: String) = {
+  def getPlainText(wikiContent: String): Option[String] = {
     val pf = new MediaWikiParserFactory()
     val parser: MediaWikiParser = pf.createParser
     val pp: ParsedPage = parser.parse(wikiContent)
 
     if (pp == null)
       None
-    else pp.getSections.asScala.map {
-      section =>
-        val sectionTitle = Option(section.getTitle)
+    else Some(
+      pp.getSections.asScala.map {
+        section =>
+          val sectionTitle = Option(section.getTitle)
 
-        val sectionContent = section.getParagraphs.asScala.map(_.getText).filter {
-          p =>
-            !p.startsWith("TEMPLATE") && !p.matches("[^:]+:[^\\ ]+")
-        }.mkString("\n")
+          val sectionContent = section.getParagraphs.asScala.map(_.getText).filter {
+            p =>
+              !p.startsWith("TEMPLATE") && !p.matches("[^:]+:[^\\ ]+")
+          }.mkString("\n")
 
-        if (sectionContent.isEmpty)
-          ""
-        else if (sectionTitle.isEmpty)
-          sectionContent
-        else
-          s"${sectionTitle.getOrElse("")}\n\n${sectionContent}"
-    }.filter(_.nonEmpty).mkString("\n\n")
+          if (sectionContent.isEmpty)
+            ""
+          else if (sectionTitle.isEmpty)
+            sectionContent
+          else
+            s"${sectionTitle.getOrElse("")}\n\n${sectionContent}"
+      }.filter(_.nonEmpty).mkString("\n\n")
+    )
   }
 
   def main(args: Array[String]): Unit = {
     val text = Source.fromFile("./samples/wiki-text3.txt").getLines().mkString("\n")
-    println(getPlainText(text))
+    println(getPlainText(text).getOrElse("<EMPTY>"))
   }
 }

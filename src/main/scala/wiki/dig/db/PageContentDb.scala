@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory
 import org.zhinang.util.GZipUtils
 import wiki.dig.common.MyConf
 import wiki.dig.db.ast.Db
+import wiki.dig.parser.WikiPage
 import wiki.dig.repo._
 import wiki.dig.util.ByteUtil
 
@@ -102,7 +103,10 @@ object PageContentDb extends Db {
       .zipWithIndex
       .foreach {
         case (id, idx) =>
-          val text = getContent(id.toInt).map(_.replaceAll("\n", "   ")).getOrElse("")
+          val text = getContent(id.toInt).flatMap {
+            t => WikiPage.getPlainText(t)
+          }.map(_.replaceAll("\n", "   ")).getOrElse("")
+
           writer.write(s"$id\t$text\n")
           if (idx % 1000 == 0) {
             LOG.info(s"processing at line $idx")
