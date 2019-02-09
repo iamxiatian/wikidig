@@ -219,6 +219,7 @@ object CategoryHierarchyDb extends Db with DbHelper {
                 val parentCount: Int = parentCache.get(child)
                   .map(_.size)
                   .getOrElse(1)
+
                 c / parentCount
             }.sum
             //更新当前类别的数量，并记录到数据库
