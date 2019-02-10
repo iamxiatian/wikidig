@@ -140,14 +140,14 @@ object SubGraphGenerator {
     * 将得到的由父子节点对构成的子图转换为dot语法，输出到dot文件中，方便可视化呈现
     * DOT语法参考Graphviz
     */
-  def toDotFile(pairs: Set[(Int, Int)], dotFile: String): File = {
-    val ids: List[Int] = pairs.toList.flatMap(pair => List(pair._1, pair._2))
+  def toDotFile(pairs: Seq[(Int, Int)], dotFile: String): File = {
+    val ids: Seq[Int] = pairs.flatMap(pair => List(pair._1, pair._2))
     val names = ids.map {
       id =>
         CategoryDb.getNameById(id).getOrElse("<EMPTY>")
     }
 
-    val tips: List[String] = ids.zip(names).map {
+    val tips: Seq[String] = ids.zip(names).map {
       case (id, name) =>
         s"""$id [label="$id", xlabel="$name"]"""
     }
@@ -188,7 +188,7 @@ object SubGraphGenerator {
     for (i <- 1 to 10) {
       val pairs = generate(30)
 
-      toDotFile(pairs.toSet, s"/tmp/tree-$i.dot")
+      toDotFile(pairs.toSeq, s"/tmp/tree-$i.dot")
       Runtime.getRuntime.exec(s"dot -Tpng /tmp/tree-$i.dot -o /tmp/test-$i.png")
     }
   }
