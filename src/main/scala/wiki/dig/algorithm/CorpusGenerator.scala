@@ -5,7 +5,7 @@ import breeze.stats.distributions.Rand
 import wiki.dig.db.{CategoryDb, CategoryHierarchyDb}
 
 import scala.collection.mutable
-import scala.util.Random
+import scala.util.{Random, Success, Try}
 
 /**
   * 生成训练用数据集，每个数据集C由一个子图、子图所拥有的文章构成。
@@ -18,7 +18,14 @@ object CorpusGenerator {
   def generate(sampleCount: Int, corpusFile: String = "./corpus.txt"): Unit = {
     val writer = File(corpusFile).newPrintWriter()
     (1 to sampleCount) foreach { idx =>
-      val text = generateOne(idx)
+      val text = Try {
+        generateOne(idx)
+      } match {
+        case Success(t) => t
+        case scala.util.Failure(e) =>
+          //重新抽样一次
+          Try(generateOne(idx)).getOrElse("")
+      }
       writer.println(text)
       writer.flush()
       if (idx % 100 == 0) {
