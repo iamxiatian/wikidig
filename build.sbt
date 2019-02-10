@@ -149,6 +149,9 @@ scriptClasspath := Seq("*")
 initialCommands in console +=
   """
     |import scala.collection.JavaConverters._
+    |import breeze.linalg._
+    |import breeze.numerics._
+    |
     |import akka.actor._
     |import akka.routing._
     |import wiki.dig.repo._

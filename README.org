@@ -1,6 +1,13 @@
 * wikidig
 
-wikidig: Dig wikipedia knowledge.
+wikidig: Dig Wikipedia Knowledge.
+
+** 使用示例
+```
+    val id = 1323
+    val name = PageDb.getNameById(id).getOrElse("<empty>")
+    val content = PageContentDb.getContent(id).getOrElse("<empty>")
+```
 
 ** 提供的数据库及功能
 wikidig将维基百科数据经过清洗变换之后，保存到rocksdb数据库之中，以方便独立运行，避免对第三方数据库的依赖。目前的数据库对象及功能如下：
@@ -23,7 +30,16 @@ wikidig将维基百科数据经过清洗变换之后，保存到rocksdb数据库
 
 *** wiki.dig.db.CategoryHierarchyDb
 1. 获取所有的``Main topic classification``下的主要分类， 如Mathematics， People等
-2.
+2. 抽样n个三角形
+3. 记录节点对之间的父子关系，并记录各个深度下，所有节点的文章数量
+
+articles in depth 2:	 AcTuple(27031,15116742)
+articles in depth 5:	 AcTuple(4731811,12344957)
+articles in depth 4:	 AcTuple(1605788,13898532)
+articles in depth 1:	 AcTuple(788,15117523)
+articles in depth 3:	 AcTuple(1200166,15090304)
+articles in depth 6:	 AcTuple(7708999,7708999)
+
 
 ** 试验
 *** 当前问题
@@ -41,7 +57,22 @@ sample.triangle.ids.txt 每行为一个三角形，第一个id是父节点，剩
 sample.category.ids.txt 当前抽样结果中出现的分类id集合
 sample.cat_page.txt 抽样结果中分类与文章id的对应关系，每一行中的第一个数字为分类id，其余数字为该分类下的文章id
 sample.page.ids.txt 抽样结果中涉及的文章id集合
+
+2. 生成文章的embedding
+
+nohup bin/start --outPageEmbedding > embedding.log &
+
+读取sample.page.ids.txt文件，如果一篇文章的长度大于500，则利用词向量平均值作为文档的向量表示，并保存到
+expt数据库中，同时输出到文件： sample.page.embedding.txt
+
 sample.page.embedding.txt 文章对应的所有词语的embedding结果的平均值
+
+
+3. 通过保存有PageId的文件，转换得到Page全文的文本文件
+./bin/page-db -i path_pageids_big -o tmp.page.txt.big > outpage.log &
+
+4. 从维基百科的分类体系中生成一个30个节点左右的子图
+SubGraphGenerator.generate(30)
 
 
 * 参考
