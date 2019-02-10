@@ -34,17 +34,16 @@ object CorpusGenerator {
     val g = breeze.stats.distributions.Gaussian(50, 10)
 
     val graph = SubGraphGenerator.generate(g.sample().toInt).toSeq
-    SubGraphGenerator.toDotFile(graph, "/tmp/test.dot")
-    Runtime.getRuntime.exec(s"dot -Tpng /tmp/test.dot -o /tmp/test.png")
-
-    //生成一个均值为1000，标准差为100的高斯分布
-    val g2 = breeze.stats.distributions.Gaussian(1000, 100)
+    //    SubGraphGenerator.toDotFile(graph, "/tmp/test.dot")
+    //    Runtime.getRuntime.exec(s"dot -Tpng /tmp/test.dot -o /tmp/test.png")
 
     val nodeText = graph.flatMap { p => Seq(p._1, p._2) }.distinct.mkString(",")
     val edgeText = graph.map {
       case (f, t) => s"$f-$t"
     }.mkString(",")
 
+    //生成一个均值为1000，标准差为100的高斯分布
+    val g2 = breeze.stats.distributions.Gaussian(1000, 100)
     val articleText = sampleArticles(graph, g2.sample().toInt).map {
       case (id, path) =>
         s"$id\t$path"

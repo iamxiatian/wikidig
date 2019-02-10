@@ -71,8 +71,20 @@ sample.page.embedding.txt 文章对应的所有词语的embedding结果的平均
 3. 通过保存有PageId的文件，转换得到Page全文的文本文件
 ./bin/page-db -i path_pageids_big -o tmp.page.txt.big > outpage.log &
 
-4. 从维基百科的分类体系中生成一个30个节点左右的子图
-SubGraphGenerator.generate(30)
+4. 子图抽样和子图内的文章抽样, 生成一个文本文件，里面保存有抽取出来的子图及文章信息。
+每一个子图的格式如下：
+
+```
+corpus $corpusId
+nodes: $nodeText
+edges: $edgeText
+articles:
+$articleText
+```
+其中，$开始的变量会替换为具体值。命令执行方式如下：
+
+ ./bin/corpus-generator <size> <filename>
+ E.g.: ./bin/corpus-generator 10000 corpus.txt
 
 
 * 参考
