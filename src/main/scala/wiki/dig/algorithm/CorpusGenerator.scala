@@ -38,7 +38,7 @@ object CorpusGenerator {
 
   def generateOne(corpusId: Int): String = {
     //生成一个均值为50，标准差为10的高斯分布
-    val g = breeze.stats.distributions.Gaussian(50, 10)
+    val g = breeze.stats.distributions.Gaussian(30, 5)
 
     val graph = SubGraphGenerator.generate(g.sample().toInt).toSeq
     //    SubGraphGenerator.toDotFile(graph, "/tmp/test.dot")
@@ -50,7 +50,7 @@ object CorpusGenerator {
     }.mkString(",")
 
     //生成一个均值为1000，标准差为100的高斯分布
-    val g2 = breeze.stats.distributions.Gaussian(1000, 100)
+    val g2 = breeze.stats.distributions.Gaussian(800, 100)
     val articleText = sampleArticles(graph, g2.sample().toInt).map {
       case (id, path) =>
         s"$id\t$path"
