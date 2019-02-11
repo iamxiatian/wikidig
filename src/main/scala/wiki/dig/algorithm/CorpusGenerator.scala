@@ -165,7 +165,7 @@ object CorpusGenerator {
     if (args.length == 3) {
       val startIndex = args(0).toInt
       val sampleCount = args(1).toInt
-      generate(startIndex, sampleCount, args(1))
+      generate(startIndex, sampleCount, args(2))
     } else {
       println("Wrong parameters.")
     }
