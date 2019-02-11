@@ -53,22 +53,34 @@ object CorpusGenerator {
     //    SubGraphGenerator.toDotFile(graph, "/tmp/test.dot")
     //    Runtime.getRuntime.exec(s"dot -Tpng /tmp/test.dot -o /tmp/test.png")
 
+    //存储父节点的索引信息
+    val parentIndex: Map[Int, Seq[Int]] = graph.groupBy(_._2) //按照孩子分组
+      .map {
+      case (child, parents) =>
+        //转换为(孩子节点, 父节点集合)
+        (child, parents.map(_._1))
+    }
+
     val nodeText = graph.flatMap { p => Seq(p._1, p._2) }.distinct.mkString(",")
     val edgeText = graph.map {
       case (f, t) => s"$f-$t"
     }.mkString(",")
 
-    val docIds: Set[Int] = graph.flatMap { p => Seq(p._1, p._2) }
+    val docIds: Set[String] = graph.flatMap { p => Seq(p._1, p._2) }
       .distinct.toSet.flatMap {
       cid =>
-        CategoryDb.getPages(cid)
+        CategoryDb.getPages(cid).map {
+          aid =>
+            val path = getPath(cid, parentIndex).mkString(",")
+            s"${aid}_$path"
+        }
     }
 
-    val docIdText = docIds.mkString(",")
+    val docIdText = docIds.mkString(";")
 
     //生成一个均值为1000，标准差为100的高斯分布
     val g2 = breeze.stats.distributions.Gaussian(1000, 100)
-    val sampledDocText = sampleArticles(graph, g2.sample().toInt).map {
+    val sampledDocText = sampleArticles(graph, parentIndex, g2.sample().toInt).map {
       case (id, path) =>
         s"${id}_$path"
     }.distinct.mkString(";")
@@ -80,15 +92,9 @@ object CorpusGenerator {
   /**
     * 抽样子图中的文章, 返回文章与对应路径的列表
     */
-  def sampleArticles(graph: Seq[(Int, Int)], sampleSize: Int): Seq[(Int, String)] = {
-    //存储父节点的索引信息
-    val parentIndex: Map[Int, Seq[Int]] = graph.groupBy(_._2) //按照孩子分组
-      .map {
-      case (child, parents) =>
-        //转换为(孩子节点, 父节点集合)
-        (child, parents.map(_._1))
-    }
-
+  def sampleArticles(graph: Seq[(Int, Int)],
+                     parentIndex: Map[Int, Seq[Int]],
+                     sampleSize: Int): Seq[(Int, String)] = {
     val nodeIds = graph.flatMap { p => Seq(p._1, p._2) }.distinct
 
     //分类节点上的文章数量
