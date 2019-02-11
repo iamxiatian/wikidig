@@ -19,7 +19,7 @@ object CorpusGenerator {
     val writer = File(corpusFile).newPrintWriter()
     var idx = startIndex
 
-    while (idx <= sampleCount + startIndex) {
+    while (idx < sampleCount + startIndex) {
       Try {
         generateOne(idx)
       } match {
