@@ -68,9 +68,9 @@ object CorpusGenerator {
 
     val docIds: Set[String] = graph.flatMap { p => Seq(p._1, p._2) }
       .distinct.toSet.flatMap {
-      cid =>
+      cid: Int =>
         CategoryDb.getPages(cid).map {
-          aid =>
+          aid: Int =>
             val path = getPath(cid, parentIndex).mkString(",")
             s"${aid}_$path"
         }
