@@ -663,6 +663,8 @@ object CategoryHierarchyDb extends Db with DbHelper {
     * 统计输出类别的数据, 输出一个Map，主键为分类的层，值为该层上的节点数量和文章数量
     */
   def dataInfo(): Map[Int, (Int, Int)] = {
+    val processedIds = mutable.Set.empty[Int]
+
     val queue = mutable.Queue.empty[(Int, Int)]
     startNodeIds.foreach(id => queue.enqueue((id, 1)))
 
@@ -673,24 +675,28 @@ object CategoryHierarchyDb extends Db with DbHelper {
     while (queue.nonEmpty) {
       val (cid, depth) = queue.dequeue()
 
-      val key = ByteUtil.int2bytes(cid)
+      if (processedIds.contains(cid)) {
+        print(".") //skip processed id
+      } else {
+        getCNode(cid) match {
+          case Some(node) =>
+            counter += 1
+            if (counter % 1000 == 0) {
+              println(s"processing $counter, queue size: ${queue.size}")
+            }
 
-      getCNode(cid) match {
-        case Some(node) =>
-          counter += 1
-          if (counter % 1000 == 0) {
-            println(s"processing $counter, queue size: ${queue.size}")
-          }
+            val pair = levelInfo.getOrElse(node.depth, (0, 0))
+            val articles = CategoryDb.getPageCount(cid).getOrElse(0)
+            levelInfo(node.depth) = (pair._1 + 1, pair._2 + articles)
 
-          val pair = levelInfo.getOrElse(node.depth, (0, 0))
-          val articles = CategoryDb.getPageCount(cid).getOrElse(0)
-          levelInfo(node.depth) = (pair._1 + 1, pair._2 + articles)
+            //继续后续处理
+            if (depth <= Max_Depth) {
+              node.outlinks.foreach(id => queue.enqueue((id, depth + 1)))
+            }
+          case None => println("X")
+        }
 
-          //继续后续处理
-          if (depth <= Max_Depth) {
-            node.outlinks.foreach(id => queue.enqueue((id, depth + 1)))
-          }
-        case None => println("X")
+        processedIds += cid
       }
     }
 
@@ -704,11 +710,20 @@ object CategoryHierarchyDb extends Db with DbHelper {
     //println("Prepare to calculate article count...")
     //StdIn.readLine()
 
-    dataInfo() foreach {
+    val data = dataInfo()
+
+    val totalNodes = data.values.map(_._1).sum
+    val totalArticles = data.values.map(_._2).sum
+
+    data foreach {
       case (depth, (nodes, articles)) =>
-        println(s"Level: $depth, \t nodes: $nodes,\t articles: $articles")
+        val nodePercent = (nodes * 100.0 / totalNodes).formatted("%.2f%%")
+        val articlePercent = (articles * 100.0 / totalArticles).formatted("%.2f%%")
+
+        println(s"Level: $depth, \t nodes: $nodes ($nodePercent),\t articles: $articles ($articlePercent)")
     }
 
+    println(s"total nodes: $totalNodes, total articles: $totalArticles")
     //CategoryHierarchyDb.calculateArticleCount()
     CategoryHierarchyDb.close()
   }
