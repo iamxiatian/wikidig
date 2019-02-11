@@ -659,11 +659,55 @@ object CategoryHierarchyDb extends Db with DbHelper {
     }.map(_._1).getOrElse(outlinks.head)
   }
 
+  /**
+    * 统计输出类别的数据, 输出一个Map，主键为分类的层，值为该层上的节点数量和文章数量
+    */
+  def dataInfo(): Map[Int, (Int, Int)] = {
+    val queue = mutable.Queue.empty[(Int, Int)]
+    startNodeIds.foreach(id => queue.enqueue((id, 1)))
+
+    // 每一层上的节点数量，拥有的文章数量
+    val levelInfo = mutable.Map.empty[Int, (Int, Int)]
+
+    var counter = 0
+    while (queue.nonEmpty) {
+      val (cid, depth) = queue.dequeue()
+
+      val key = ByteUtil.int2bytes(cid)
+
+      getCNode(cid) match {
+        case Some(node) =>
+          counter += 1
+          if (counter % 1000 == 0) {
+            println(s"processing $counter, queue size: ${queue.size}")
+          }
+
+          val pair = levelInfo.getOrElse(node.depth, (0, 0))
+          val articles = CategoryDb.getPageCount(cid).getOrElse(0)
+          levelInfo(node.depth) = (pair._1 + 1, pair._2 + articles)
+
+          //继续后续处理
+          if (depth <= Max_Depth) {
+            node.outlinks.foreach(id => queue.enqueue((id, depth + 1)))
+          }
+        case None => println("X")
+      }
+    }
+
+    levelInfo.toMap
+  }
+
+
   def main(args: Array[String]): Unit = {
-    output(new File("./all.category.names.txt"), true)
+    // output(new File("./all.category.names.txt"), true)
 
     //println("Prepare to calculate article count...")
     //StdIn.readLine()
+
+    dataInfo() foreach {
+      case (depth, (nodes, articles)) =>
+        println(s"Level: $depth, \t nodes: $nodes,\t articles: $articles")
+    }
 
     //CategoryHierarchyDb.calculateArticleCount()
     CategoryHierarchyDb.close()
@@ -687,12 +731,9 @@ case class CNode(depth: Int,
   /**
     * 获取当前节点的子节点，即出链并且深度为当前深度+1的类别
     */
-  def childLinks: Seq[Int] = outlinks.filter {
-    child =>
-      CategoryHierarchyDb.getCNode(child)
-        .map(_.depth == depth + 1)
-        .getOrElse(false)
-  }
+  def childLinks: Seq[Int] = outlinks.filter(child =>
+    CategoryHierarchyDb.getCNode(child).exists(_.depth == depth + 1)
+  )
 
   def toBytes(): Array[Byte] = {
     val out = new ByteArrayOutputStream()

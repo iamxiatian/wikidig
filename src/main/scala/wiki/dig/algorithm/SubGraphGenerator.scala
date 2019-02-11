@@ -185,11 +185,11 @@ object SubGraphGenerator {
     //        println(s"$id \t $name ($d)")
     //    }
 
-    for (i <- 1 to 10) {
-      val pairs = generate(30)
-
-      toDotFile(pairs.toSeq, s"/tmp/tree-$i.dot")
-      Runtime.getRuntime.exec(s"dot -Tpng /tmp/tree-$i.dot -o /tmp/test-$i.png")
-    }
+//    for (i <- 1 to 10) {
+//      val pairs = generate(30)
+//
+//      toDotFile(pairs.toSeq, s"/tmp/tree-$i.dot")
+//      Runtime.getRuntime.exec(s"dot -Tpng /tmp/tree-$i.dot -o /tmp/test-$i.png")
+//    }
   }
 }
