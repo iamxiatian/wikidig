@@ -17,19 +17,21 @@ import scala.util.{Random, Success, Try}
 object CorpusGenerator {
   def generate(startIndex: Int, sampleCount: Int, corpusFile: String = "./corpus.txt"): Unit = {
     val writer = File(corpusFile).newPrintWriter()
-    (startIndex to sampleCount + startIndex) foreach { idx =>
-      val text = Try {
+    var idx = startIndex
+
+    while (idx <= sampleCount + startIndex) {
+      Try {
         generateOne(idx)
       } match {
-        case Success(t) => t
+        case Success(text) =>
+          writer.println(text)
+          writer.flush()
+          idx += 1
+          if (idx % 100 == 0) {
+            println(s"process $idx / $sampleCount ... ")
+          }
         case scala.util.Failure(e) =>
-          //重新抽样一次
-          Try(generateOne(idx)).getOrElse("")
-      }
-      writer.println(text)
-      writer.flush()
-      if (idx % 100 == 0) {
-        println(s"process $idx / $sampleCount ... ")
+        //println("Error")
       }
     }
     writer.close()
