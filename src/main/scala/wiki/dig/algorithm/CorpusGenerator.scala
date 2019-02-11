@@ -36,6 +36,13 @@ object CorpusGenerator {
     println("DONE!")
   }
 
+
+  /**
+    * 生成一个子图，返回一个字符串记录该子图的所有信息，格式如下：
+    * 子图id \t 子图的节点集合 \t 子图的边集合 \t 子图的所有文章 \t 子图抽出的文章及路径
+    * #1 \t node1, node2 ... node_n \t  n1-n2, n1-n3,  ....    \t  doc1, doc2 .... \t docid_n1,n2,n3; docid_n2,n3,n4...
+    *
+    */
   def generateOne(corpusId: Int): String = {
     //生成一个均值为50，标准差为10的高斯分布
     val g = breeze.stats.distributions.Gaussian(30, 5)
@@ -49,20 +56,23 @@ object CorpusGenerator {
       case (f, t) => s"$f-$t"
     }.mkString(",")
 
+    val docIds: Set[Int] = graph.flatMap { p => Seq(p._1, p._2) }
+      .distinct.toSet.flatMap {
+      cid =>
+        CategoryDb.getPages(cid)
+    }
+
+    val docIdText = docIds.mkString(",")
+
     //生成一个均值为1000，标准差为100的高斯分布
     val g2 = breeze.stats.distributions.Gaussian(1000, 100)
-    val articleText = sampleArticles(graph, g2.sample().toInt).map {
+    val sampledDocText = sampleArticles(graph, g2.sample().toInt).map {
       case (id, path) =>
-        s"$id\t$path"
-    }.distinct.mkString("\n")
+        s"${id}_$path"
+    }.distinct.mkString(";")
 
-    s"""
-       |corpus $corpusId
-       |nodes: $nodeText
-       |edges: $edgeText
-       |articles:
-       |$articleText
-     """.stripMargin
+    //#1 \t node1, node2 ... node_n \t  n1-n2, n1-n3,  ....    \t  doc1, doc2 .... \t docid_n1,n2,n3; docid_n2,n3,n4...
+    s"#${corpusId}\t${nodeText}\t${edgeText}\t${docIdText}\t${sampledDocText}"
   }
 
   /**
