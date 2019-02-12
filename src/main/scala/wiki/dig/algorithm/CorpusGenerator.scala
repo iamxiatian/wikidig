@@ -23,10 +23,14 @@ object CorpusGenerator {
 
     while (idx <= endIndex) {
       Try {
-        val text = generateOne(idx)
-        writer.write(text)
-        writer.write("\n")
-        idx += 1
+        generateOne(idx) match {
+          case Some(text) =>
+            writer.write(text)
+            writer.write("\n")
+            idx += 1
+          case None =>
+          //println("skip ... ")
+        }
       } match {
         case Success(_) =>
           if (idx % 100 == 0) {
@@ -41,14 +45,13 @@ object CorpusGenerator {
     println("DONE!")
   }
 
-
   /**
     * 生成一个子图，返回一个字符串记录该子图的所有信息，格式如下：
     * 子图id #子图编号 \t 子图的节点集合 \t 子图的边集合 \t 子图的所有文章及路径 \t 子图抽出的文章及路径
     * #1 \t #1 node1, node2 ... node_n \t  n1-n2, n1-n3,  ....    \t  doc1_n1,n2,n3;doc2_n1,n2,n3 .... \t docid_n1,n2,n3;docid_n2,n3,n4...
     *
     */
-  def generateOne(corpusId: Int): String = {
+  def generateOne(corpusId: Int): Option[String] = {
     //生成一个均值为50，标准差为10的高斯分布
     val g = breeze.stats.distributions.Gaussian(30, 5)
 
@@ -64,32 +67,36 @@ object CorpusGenerator {
         (child, parents.map(_._1))
     }
 
-    val nodeText = graph.flatMap { p => Seq(p._1, p._2) }.distinct.mkString(",")
-    val edgeText = graph.map {
-      case (f, t) => s"$f-$t"
-    }.mkString(",")
-
-    val docIds: Set[String] = graph.flatMap { p => Seq(p._1, p._2) }
-      .distinct.toSet.flatMap {
-      cid: Int =>
-        CategoryDb.getPages(cid).map {
-          aid: Int =>
-            val path = getPath(cid, parentIndex).mkString(",")
-            s"${aid}_$path"
-        }
-    }
-
-    val docIdText = docIds.mkString(";")
-
     //生成一个均值为1000，标准差为100的高斯分布
     val g2 = breeze.stats.distributions.Gaussian(1000, 100)
-    val sampledDocText = sampleArticles(graph, parentIndex, g2.sample().toInt).map {
-      case (id, path) =>
-        s"${id}_$path"
-    }.distinct.mkString(";")
 
-    //#1 \t node1, node2 ... node_n \t  n1-n2, n1-n3,  ....    \t  doc1, doc2 .... \t docid_n1,n2,n3; docid_n2,n3,n4...
-    s"#${corpusId}\t${nodeText}\t${edgeText}\t${docIdText}\t${sampledDocText}"
+    sampleArticles(graph, parentIndex, g2.sample().toInt) map {
+      sampleDocs =>
+        val sampledDocText = sampleDocs.get.map {
+          case (id, path) =>
+            s"${id}_$path"
+        }.distinct.mkString(";")
+
+        val nodeText = graph.flatMap { p => Seq(p._1, p._2) }.distinct.mkString(",")
+        val edgeText = graph.map {
+          case (f, t) => s"$f-$t"
+        }.mkString(",")
+
+        val docIds: Set[String] = graph.flatMap { p => Seq(p._1, p._2) }
+          .distinct.toSet.flatMap {
+          cid: Int =>
+            CategoryDb.getPages(cid).map {
+              aid: Int =>
+                val path = getPath(cid, parentIndex).mkString(",")
+                s"${aid}_$path"
+            }
+        }
+
+        val docIdText = docIds.mkString(";")
+
+        //#1 \t node1, node2 ... node_n \t  n1-n2, n1-n3,  ....    \t  doc1, doc2 .... \t docid_n1,n2,n3; docid_n2,n3,n4...
+        s"#${corpusId}\t${nodeText}\t${edgeText}\t${docIdText}\t${sampledDocText}"
+    }
   }
 
   /**
@@ -97,7 +104,7 @@ object CorpusGenerator {
     */
   def sampleArticles(graph: Seq[(Int, Int)],
                      parentIndex: Map[Int, Seq[Int]],
-                     sampleSize: Int): Seq[(Int, String)] = {
+                     sampleSize: Int): Option[Seq[(Int, String)]] = {
     val nodeIds = graph.flatMap { p => Seq(p._1, p._2) }.distinct
 
     //分类节点上的文章数量
@@ -108,23 +115,66 @@ object CorpusGenerator {
         else {
           //println(s"==> ${CategoryDb.getNameById(id).get}: ${CategoryDb.getPageCount(id).getOrElse(0)}")
           val depth = CategoryHierarchyDb.getCNode(id).get.depth
-          //深度越大越容易选中，父节点（路径）越多，越容易被选中
-          CategoryDb.getPageCount(id).getOrElse(0) * depth * parentIndex.get(id).map(_.size).getOrElse(1)
+
+          //深度越大越容易选中
+          if (depth > 0)
+            CategoryDb.getPageCount(id).getOrElse(0) * depth
+          else
+            CategoryDb.getPageCount(id).getOrElse(0)
         }
     }
 
+    val totalArticles = counts.sum
+    if (totalArticles < 100) {
+      println(s"skip this generated corpus: total articles: $totalArticles")
+      None
+    } else {
+      //子图抽取的文章数量分布，主键为子图上的节点ID，值为该节点上需要抽取的文章数量
+      val pickedDist = sampleAllocation(nodeIds, counts, sampleSize)
 
+      val pickedArticles: Seq[(Int, String)] = pickedDist.toSeq.flatMap {
+        case (cid, count) =>
+          //从节点id中抽文章
+          val pickedIds = (1 to count) map {
+            _ =>
+              val pageIds = CategoryDb.getPages(cid)
+              Rand.choose(pageIds).get()
+          }
+
+          pickedIds.map {
+            id =>
+              //val path = getPath(cid, parentIndex).map(CategoryDb.getNameById(_).get)
+              val path = getPath(cid, parentIndex)
+              (id, path.mkString(","))
+          }
+      }
+
+      Some(pickedArticles)
+    }
+  }
+
+
+  /**
+    * 根据子图节点及每个节点的文章数量，抽取一定数量的文章，把每个节点应抽取的文章数量
+    * 以Map返回
+    */
+  private def sampleAllocation(nodeIds: Seq[Int],
+                               articleCounts: Seq[Int],
+                               sampleSize: Int
+                              ): Map[Int, Int] = {
     //子图抽取的文章数量分布，主键为子图上的节点ID，值为该节点上需要抽取的文章数量
     val pickedDist = mutable.Map.empty[Int, Int]
+    //val totalArticles: Long = articleCounts.foldLeft(0L)(_ + _)
+    val totalArticles: Int = articleCounts.sum
 
     //设置抽样的文章所在的节点，保存在pickedDist中
     (1 to sampleSize) foreach { _ =>
       //该子图所拥有的文章总数量
-      val randNumber = Random.nextInt(counts.sum)
+      val randNumber = Random.nextInt(totalArticles)
       var accumulator = 0
 
       //选中的子图节点
-      val pickedId: Int = nodeIds.zip(counts).find {
+      val pickedId: Int = nodeIds.zip(articleCounts).find {
         case (id, c) =>
           if (c + accumulator > randNumber)
             true
@@ -138,24 +188,7 @@ object CorpusGenerator {
       pickedDist(pickedId) = pickedDist.getOrElse(pickedId, 0) + 1
     }
 
-    val pickedArticles: Seq[(Int, String)] = pickedDist.toSeq.flatMap {
-      case (cid, count) =>
-        //从节点id中抽文章
-        val pickedIds = (1 to count) map {
-          _ =>
-            val pageIds = CategoryDb.getPages(cid)
-            Rand.choose(pageIds).get()
-        }
-
-        pickedIds.map {
-          id =>
-            //val path = getPath(cid, parentIndex).map(CategoryDb.getNameById(_).get)
-            val path = getPath(cid, parentIndex)
-            (id, path.mkString(","))
-        }
-    }
-
-    pickedArticles
+    pickedDist.toMap
   }
 
   /**
