@@ -72,7 +72,7 @@ object CorpusGenerator {
 
     sampleArticles(graph, parentIndex, g2.sample().toInt) map {
       sampleDocs =>
-        val sampledDocText = sampleDocs.get.map {
+        val sampledDocText = sampleDocs.map {
           case (id, path) =>
             s"${id}_$path"
         }.distinct.mkString(";")
