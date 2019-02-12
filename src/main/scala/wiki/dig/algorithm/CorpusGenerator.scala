@@ -15,11 +15,11 @@ import scala.util.{Random, Success, Try}
   * 记录其在子图中的路径，同一文章可能会拥有不同的路径。
   */
 object CorpusGenerator {
-  def generate(startIndex: Int, sampleCount: Int, corpusFile: String = "./corpus.txt"): Unit = {
+  def generate(startIndex: Int, endIndex: Int, corpusFile: String = "./corpus.txt"): Unit = {
     val writer = File(corpusFile).newPrintWriter()
     var idx = startIndex
 
-    while (idx < sampleCount + startIndex) {
+    while (idx <= endIndex) {
       Try {
         generateOne(idx)
       } match {
@@ -28,7 +28,7 @@ object CorpusGenerator {
           writer.flush()
           idx += 1
           if (idx % 100 == 0) {
-            println(s"process $idx / $sampleCount ... ")
+            println(s"process $idx / $endIndex ... ")
           }
         case scala.util.Failure(e) =>
         //println("Error")
@@ -167,7 +167,7 @@ object CorpusGenerator {
     }
 
   def main(args: Array[String]): Unit = {
-    println("RUN: bin/corpus-generator <start-index> <size> <filename>")
+    println("RUN: bin/corpus-generator <start-index(included> <end-index(included)> <filename>")
     println("E.g.: bin/corpus-generator 1 10000 corpus.txt")
 
     if (args.length == 3) {
