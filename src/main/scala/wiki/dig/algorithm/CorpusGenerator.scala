@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets
 
 import better.files.File
 import breeze.stats.distributions.Rand
+import org.joda.time.DateTime
 import wiki.dig.db.{CategoryDb, CategoryHierarchyDb}
 
 import scala.collection.mutable
@@ -70,8 +71,8 @@ object CorpusGenerator {
     //生成一个均值为1000，标准差为100的高斯分布
     val g2 = breeze.stats.distributions.Gaussian(1000, 100)
 
-    sampleArticles(graph, parentIndex, g2.sample().toInt) map {
-      sampleDocs =>
+    sampleArticles(graph, parentIndex, g2.sample().toInt) match {
+      case Some(sampleDocs) =>
         val sampledDocText = sampleDocs.map {
           case (id, path) =>
             s"${id}_$path"
@@ -95,7 +96,10 @@ object CorpusGenerator {
         val docIdText = docIds.mkString(";")
 
         //#1 \t node1, node2 ... node_n \t  n1-n2, n1-n3,  ....    \t  doc1, doc2 .... \t docid_n1,n2,n3; docid_n2,n3,n4...
-        s"#${corpusId}\t${nodeText}\t${edgeText}\t${docIdText}\t${sampledDocText}"
+        Option(s"#${corpusId}\t${nodeText}\t${edgeText}\t${docIdText}\t${sampledDocText}")
+      case None =>
+        SubGraphGenerator.toDotFile(graph, s"${DateTime.now().toString("yyyyMMddHHmmss")}.dot")
+        Option.empty[String]
     }
   }
 
