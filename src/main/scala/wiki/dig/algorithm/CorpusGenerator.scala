@@ -1,5 +1,7 @@
 package wiki.dig.algorithm
 
+import java.nio.charset.StandardCharsets
+
 import better.files.File
 import breeze.stats.distributions.Rand
 import wiki.dig.db.{CategoryDb, CategoryHierarchyDb}
@@ -16,22 +18,23 @@ import scala.util.{Random, Success, Try}
   */
 object CorpusGenerator {
   def generate(startIndex: Int, endIndex: Int, corpusFile: String = "./corpus.txt"): Unit = {
-    val writer = File(corpusFile).newPrintWriter()
+    val writer = File(corpusFile).newBufferedWriter(StandardCharsets.UTF_8)
     var idx = startIndex
 
     while (idx <= endIndex) {
       Try {
-        generateOne(idx)
+        val text = generateOne(idx)
+        writer.write(text)
+        writer.write("\n")
+        idx += 1
       } match {
-        case Success(text) =>
-          writer.println(text)
-          writer.flush()
-          idx += 1
+        case Success(_) =>
           if (idx % 100 == 0) {
+            writer.flush()
             println(s"process $idx / $endIndex ... ")
           }
         case scala.util.Failure(e) =>
-        //println("Error")
+          e.printStackTrace()
       }
     }
     writer.close()
@@ -41,8 +44,8 @@ object CorpusGenerator {
 
   /**
     * 生成一个子图，返回一个字符串记录该子图的所有信息，格式如下：
-    * 子图id \t 子图的节点集合 \t 子图的边集合 \t 子图的所有文章 \t 子图抽出的文章及路径
-    * #1 \t node1, node2 ... node_n \t  n1-n2, n1-n3,  ....    \t  doc1, doc2 .... \t docid_n1,n2,n3; docid_n2,n3,n4...
+    * 子图id #子图编号 \t 子图的节点集合 \t 子图的边集合 \t 子图的所有文章及路径 \t 子图抽出的文章及路径
+    * #1 \t #1 node1, node2 ... node_n \t  n1-n2, n1-n3,  ....    \t  doc1_n1,n2,n3;doc2_n1,n2,n3 .... \t docid_n1,n2,n3;docid_n2,n3,n4...
     *
     */
   def generateOne(corpusId: Int): String = {
