@@ -30,7 +30,6 @@ object PageContentDb extends Db {
   if (!dbPath.getParentFile.exists())
     dbPath.getParentFile.mkdirs()
 
-
   RocksDB.loadLibrary()
 
   val options = new DBOptions().setCreateIfMissing(!MyConf.pageDbReadOnly)
@@ -43,7 +42,15 @@ object PageContentDb extends Db {
 
   protected val cfHandlers = Lists.newArrayList[ColumnFamilyHandle]
 
-  protected val db = RocksDB.open(options, dbPath.getAbsolutePath, cfNames, cfHandlers)
+  protected val db = {
+    println(s"Try to open rocksdb at ${dbPath.getAbsolutePath}")
+    RocksDB.open(options, dbPath.getAbsolutePath, cfNames, cfHandlers)
+  }
+
+  override def open() = {
+    val num = db.getLongProperty("rocksdb.estimate-num-keys")
+    println(s"db contains $num keys")
+  }
 
   protected val defaultHandler: ColumnFamilyHandle = cfHandlers.get(0)
 

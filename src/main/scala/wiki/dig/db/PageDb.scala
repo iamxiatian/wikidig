@@ -267,8 +267,10 @@ object PageDb extends Db with DbHelper {
     parser.parse(args, Config()) match {
       case Some(config) =>
         if (config.inFile.nonEmpty && config.outFile.nonEmpty) {
+          PageContentDb.open()
           val it = Source.fromFile(config.inFile.get).getLines()
           PageContentDb.output(it, config.outFile.get)
+          PageContentDb.close()
           LOG.info("DONE.")
         } else if (config.show.nonEmpty) {
           val idOrName = config.show.get

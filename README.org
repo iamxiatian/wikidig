@@ -83,9 +83,10 @@ $articleText
 ```
 其中，$开始的变量会替换为具体值。命令执行方式如下：
 
- ./bin/corpus-generator <size> <filename>
- E.g.: ./bin/corpus-generator 10000 corpus.txt
+ ./bin/corpus-generator <start-index> <size> <filename>
+ E.g.: ./bin/corpus-generator 1 10000 corpus.txt
 
+其中的start-index表示corpus id的取值开始范围
 
 * 参考
 
