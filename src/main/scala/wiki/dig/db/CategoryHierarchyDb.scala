@@ -411,7 +411,7 @@ object CategoryHierarchyDb extends Db with DbHelper {
     * cate_id  cate_name
     *
     * brief = false:
-    * cate_id  cate_name cate_level cate1_id cate2_id cate3_id cate4_id
+    * cate_id  cate_name cate_level cate1_id cate2_id cate3_id (child ...)
     *
     * @param f
     */
@@ -704,27 +704,65 @@ object CategoryHierarchyDb extends Db with DbHelper {
   }
 
 
-  def main(args: Array[String]): Unit = {
+  def main2(args: Array[String]): Unit = {
     // output(new File("./all.category.names.txt"), true)
 
     //println("Prepare to calculate article count...")
     //StdIn.readLine()
 
-    val data = dataInfo()
 
-    val totalNodes = data.values.map(_._1).sum
-    val totalArticles = data.values.map(_._2).sum
+  }
 
-    data foreach {
-      case (depth, (nodes, articles)) =>
-        val nodePercent = (nodes * 100.0 / totalNodes).formatted("%.2f%%")
-        val articlePercent = (articles * 100.0 / totalArticles).formatted("%.2f%%")
+  def main(args: Array[String]): Unit = {
+    case class Config(allNodesToFile: Option[File] = None,
+                      verbose: Boolean = true,
+                      showStats: Boolean = false)
 
-        println(s"Level: $depth, \t nodes: $nodes ($nodePercent),\t articles: $articles ($articlePercent)")
+    val parser = new scopt.OptionParser[Config]("bin/category-hierarchy-db") {
+      head("category-hierarchy-db.")
+
+      opt[File]("allNodesToFile").optional()
+        .action((x, c) => c.copy(allNodesToFile = Some(x)))
+        .text("输出所有的节点到该文件中")
+
+      opt[Boolean]("verbose").optional()
+        .action((x, c) => c.copy(verbose = x))
+        .text("输出节点名称时同时输出子节点")
+
+      opt[Boolean]("showStats").optional()
+        .action((x, c) => c.copy(showStats = x))
+        .text("显示统计信息")
     }
 
-    println(s"total nodes: $totalNodes, total articles: $totalArticles")
-    //CategoryHierarchyDb.calculateArticleCount()
+    parser.parse(args, Config()) match {
+      case Some(config) =>
+        if (config.allNodesToFile.nonEmpty) {
+          println(s"把所有节点输出到文件：${config.allNodesToFile.get}")
+          output(config.allNodesToFile.get, !config.verbose)
+          println("DONE.")
+        }
+
+        if (config.showStats) {
+          println("显示类别统计信息：")
+          val data = dataInfo()
+
+          val totalNodes = data.values.map(_._1).sum
+          val totalArticles = data.values.map(_._2).sum
+
+          data foreach {
+            case (depth, (nodes, articles)) =>
+              val nodePercent = (nodes * 100.0 / totalNodes).formatted("%.2f%%")
+              val articlePercent = (articles * 100.0 / totalArticles).formatted("%.2f%%")
+
+              println(s"Level: $depth, \t nodes: $nodes ($nodePercent),\t articles: $articles ($articlePercent)")
+          }
+
+          println(s"total nodes: $totalNodes, total articles: $totalArticles")
+        }
+
+      case None =>
+        println( """Wrong parameters :(""".stripMargin)
+    }
     CategoryHierarchyDb.close()
   }
 }
