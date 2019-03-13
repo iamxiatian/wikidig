@@ -49,6 +49,8 @@ object MyConf {
 
   lazy val dbRootDir = new File(config.getString("dig.db.root.dir"))
 
+  lazy val wikiLang = config.getString("dig.wiki.lang")
+
   lazy val categoryDbReadOnly = config.getBoolean("dig.db.category.readonly")
   lazy val pageDbReadOnly = config.getBoolean("dig.db.page.readonly")
 
@@ -66,8 +68,8 @@ object MyConf {
        |│   ├── user ==> $wikiDbUser
        |│   └── password ==> $wikiDbPassword
        |│
-       |└── fetcher config:
-       |    ├── fetcher identification ==> xxx
+       |└── wiki config:
+       |    ├── language ==> $wikiLang
        |    └── API http port ==> ssss
        |"""
   }

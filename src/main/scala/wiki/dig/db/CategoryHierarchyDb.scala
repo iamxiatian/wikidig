@@ -399,9 +399,15 @@ object CategoryHierarchyDb extends Db with DbHelper {
     //Await.result(CategoryRepo.levelOne(), Duration.Inf).map(_.id)
 
     //为了避免连接MySQL，直接把ID写到如下的列表中
-    List(690747, 691008, 691810, 691928, 692694, 693555, 693708, 693800,
-      694861, 695027, 696603, 696763, 722196, 751381, 1004110, 1633936,
-      2389032, 2766046, 3260154, 4892515, 8017451, 47642171, 48005914)
+    if (MyConf.wikiLang == "zh")
+      List(33576, 33578, 33580, 33582, 33586, 41219, 41504, 42326, 44066,
+        44741, 58048, 59765, 65708, 75848, 258453, 326427, 326428, 414585,
+        545519, 766030, 770007, 1041667)
+    else
+      List(690747, 691008, 691810, 691928, 692694, 693555, 693708, 693800,
+        694861, 695027, 696603, 696763, 722196, 751381, 1004110, 1633936,
+        2389032, 2766046, 3260154, 4892515, 8017451, 47642171, 48005914)
+
   }
 
   /**
@@ -452,7 +458,7 @@ object CategoryHierarchyDb extends Db with DbHelper {
     }
 
     writer.close()
-    println(s"DONE to file ${f.getCanonicalPath}")
+    println(s"\nDONE to file ${f.getCanonicalPath}")
   }
 
   /**
@@ -743,7 +749,7 @@ object CategoryHierarchyDb extends Db with DbHelper {
         }
 
         if (config.showStats) {
-          println("显示类别统计信息：")
+          println("显示类别统计信息: ")
           val data = dataInfo()
 
           val totalNodes = data.values.map(_._1).sum

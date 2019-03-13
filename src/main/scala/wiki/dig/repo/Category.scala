@@ -2,6 +2,7 @@ package wiki.dig.repo
 
 import java.util.concurrent.LinkedBlockingQueue
 
+import wiki.dig.common.MyConf
 import wiki.dig.repo.core.Repo
 
 import scala.concurrent.duration.Duration
@@ -59,7 +60,10 @@ object CategoryRepo extends Repo[Category] {
     * @return
     */
   def root(): Future[Option[Category]] = db.run {
-    entities.filter(_.name === "Main_topic_classifications").result.headOption
+    if(MyConf.wikiLang == "zh")
+      entities.filter(r => r.name === "页面分类" || r.name == "頁面分類").result.headOption
+    else
+      entities.filter(_.name === "Main_topic_classifications").result.headOption
   }
 
   /**
