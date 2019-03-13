@@ -76,13 +76,13 @@ object Start extends App {
     case Some(config) =>
       if (config.buildCategoryPairs) {
         CategoryDb.build()
-        CategoryDb.close()
+        //CategoryDb.close()
       }
 
       if (config.buildHierarchy) {
         CategoryHierarchyDb.build()
         CategoryHierarchyDb.calculateArticleCount()
-        CategoryHierarchyDb.close()
+        //CategoryHierarchyDb.close()
       }
 
       if (config.sample.nonEmpty) {
@@ -93,13 +93,13 @@ object Start extends App {
       if (config.buildPageDb) {
         println("build page db ...")
         PageDb.build(config.startId, config.batchSize)
-        PageDb.close()
+        //PageDb.close()
       }
 
       if (config.buildPageContentDb) {
         println("build page db ...")
         PageContentDb.build(config.startId, config.batchSize)
-        PageContentDb.close()
+        // PageContentDb.close()
       }
 
       if (config.buildEmbedding) {
@@ -116,6 +116,11 @@ object Start extends App {
     case None => {
       println( """Wrong parameters :(""".stripMargin)
     }
+
   }
 
+  CategoryDb.close()
+  CategoryHierarchyDb.close()
+  PageDb.close()
+  PageContentDb.close()
 }
