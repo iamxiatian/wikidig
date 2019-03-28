@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets
 import better.files.File
 import breeze.stats.distributions.Rand
 import org.joda.time.DateTime
+import wiki.dig.algorithm.SubGraphGenerator.generate
 import wiki.dig.db.{CategoryDb, CategoryHierarchyDb}
 
 import scala.collection.mutable
@@ -207,15 +208,18 @@ object CorpusGenerator {
     }
 
   def main(args: Array[String]): Unit = {
-    println("RUN: bin/corpus-generator <start-index(included> <end-index(included)> <filename>")
-    println("E.g.: bin/corpus-generator 1 10000 corpus.txt")
+//    println("RUN: bin/corpus-generator <start-index(included> <end-index(included)> <filename>")
+//    println("E.g.: bin/corpus-generator 1 10000 corpus.txt")
+//
+//    if (args.length == 3) {
+//      val startIndex = args(0).toInt
+//      val sampleCount = args(1).toInt
+//      generate(startIndex, sampleCount, args(2))
+//    } else {
+//      println("Wrong parameters.")
+//    }
 
-    if (args.length == 3) {
-      val startIndex = args(0).toInt
-      val sampleCount = args(1).toInt
-      generate(startIndex, sampleCount, args(2))
-    } else {
-      println("Wrong parameters.")
-    }
+    val pairs = SubGraphGenerator.generate(30)
+    SubGraphGenerator.toDotFile(pairs.toSeq, "/tmp/test.dot")
   }
 }

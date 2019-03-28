@@ -174,22 +174,22 @@ object SubGraphGenerator {
   }
 
   def main(args: Array[String]): Unit = {
-    //    val cid = 693661
-    //    print("parents:")
-    //    println(CategoryHierarchyDb.getParentIds(35321013).mkString(", "))
-    //    println(CategoryDb.getNameById(690747))
-    //
-    //    neighborIds(cid).foreach {
-    //      case (id, d) =>
-    //        val name = CategoryDb.getNameById(id).getOrElse("<EMPTY>")
-    //        println(s"$id \t $name ($d)")
-    //    }
+    val cid = 693661
+    print("parents:")
+    println(CategoryHierarchyDb.getParentIds(35321013).mkString(", "))
+    println(CategoryDb.getNameById(690747))
 
-//    for (i <- 1 to 10) {
-//      val pairs = generate(30)
-//
-//      toDotFile(pairs.toSeq, s"/tmp/tree-$i.dot")
-//      Runtime.getRuntime.exec(s"dot -Tpng /tmp/tree-$i.dot -o /tmp/test-$i.png")
-//    }
+    neighborIds(cid).foreach {
+      case (id, d) =>
+        val name = CategoryDb.getNameById(id).getOrElse("<EMPTY>")
+        println(s"$id \t $name ($d)")
+    }
+
+    for (i <- 1 to 10) {
+      val pairs = generate(30)
+
+      toDotFile(pairs.toSeq, s"/tmp/tree-$i.dot")
+      Runtime.getRuntime.exec(s"dot -Tpng /tmp/tree-$i.dot -o /tmp/test-$i.png")
+    }
   }
 }
