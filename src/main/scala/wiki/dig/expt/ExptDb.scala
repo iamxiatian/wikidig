@@ -1,17 +1,18 @@
-package wiki.dig.db
+package wiki.dig.expt
 
-import java.io._
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.text.DecimalFormat
 
-import breeze.linalg._
+import breeze.linalg.DenseVector
 import com.google.common.collect.Lists
 import com.google.common.io.Files
 import org.apache.commons.lang3.StringUtils
-import org.rocksdb._
+import org.rocksdb.{ColumnFamilyDescriptor, ColumnFamilyHandle, DBOptions, RocksDB}
 import org.slf4j.LoggerFactory
 import wiki.dig.common.MyConf
 import wiki.dig.db.ast.{Db, DbHelper}
+import wiki.dig.db.{CategoryDb, PageContentDb}
 import wiki.dig.util.ByteUtil
 
 import scala.io.Source

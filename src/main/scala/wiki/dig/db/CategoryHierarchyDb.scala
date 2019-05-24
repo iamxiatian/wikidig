@@ -519,6 +519,56 @@ object CategoryHierarchyDb extends Db with DbHelper {
     println("DONE!")
   }
 
+
+  /**
+    * 把所有出现的文章id，以无重复的方式记录到集合对象中
+    */
+  def dumpPageIds(pageIdFile: File = new File("./dump/page_id.txt")): Set[Int] = {
+    println("Start to get page ids from hierarchy category")
+
+    val pageIdSet = mutable.Set.empty[Int] //存放所有关联的网页ID
+    val queue = mutable.Queue.empty[(Int, Int)]
+    startNodeIds.foreach(cid => queue.enqueue((cid, 1)))
+
+    var counter = 0
+    while (queue.nonEmpty) {
+      val (cid, depth) = queue.dequeue()
+
+      val key = ByteUtil.int2bytes(cid)
+
+      getCNode(cid) match {
+        case Some(node) =>
+          counter += 1
+          if (counter % 1000 == 0) {
+            println(s"processing $counter, queue size: ${queue.size}")
+          }
+
+          val pageIds = CategoryDb.getPages(cid)
+          pageIds.foreach { pid => pageIdSet += pid }
+
+          if (depth <= Max_Depth) {
+            node.outlinks.foreach(id => queue.enqueue((id, depth + 1)))
+          }
+        case None =>
+          //Error
+          print("X")
+      }
+    }
+
+    pageIdFile.getParentFile.mkdirs()
+
+    val pageIdsWriter = Files.newWriter(pageIdFile, UTF_8)
+    pageIdSet.foreach {
+      id =>
+        pageIdsWriter.write(id)
+        pageIdsWriter.write("\n")
+    }
+    pageIdsWriter.close()
+    println("DONE!")
+
+    pageIdSet.toSet
+  }
+
   /**
     * 抽样n个三角形, 即一个父类R和两个子类A,B，形成一个三角形(R, A, B).
     *
