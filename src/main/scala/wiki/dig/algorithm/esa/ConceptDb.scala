@@ -1,4 +1,4 @@
-package wiki.dig.db
+package wiki.dig.algorithm.esa
 
 import java.io._
 import java.nio.charset.StandardCharsets
@@ -17,25 +17,14 @@ import scala.concurrent.duration.Duration
 import scala.io.Source
 
 /**
-  * 把Page的信息保存到RocksDB数据库中，里面记录的信息包括：
-  *
-  * Page的id:name双向映射关系，来自于数据库的Page. 由于有别名的存在，一个ID会对应到一个
-  * 标准的词条名称上，但是有多个名称（规范的和非规范的）映射到一个id上。
-  *
-  * 页面的入链，来自于page_inlinks
-  *
-  * 页面的出链，来自于page_outlinks
-  *
-  * 页面指向的类别，来自于page_categories
-  *
-  * Page Redirects，来自于表：page_redirects
+  * 把Concept的信息保存到RocksDB数据库中
   */
 object PageDb extends Db with DbHelper {
   val LOG = LoggerFactory.getLogger(this.getClass)
 
   import StandardCharsets.UTF_8
 
-  val dbPath = new File(MyConf.dbRootDir, "page/main")
+  val dbPath = new File(MyConf.dbRootDir, "page/concept")
   if (!dbPath.getParentFile.exists())
     dbPath.getParentFile.mkdirs()
 
@@ -51,7 +40,7 @@ object PageDb extends Db with DbHelper {
     new ColumnFamilyDescriptor("disambiguation".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("inlinks".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("outlinks".getBytes(UTF_8)),
-    new ColumnFamilyDescriptor("category".getBytes(UTF_8)),
+    new ColumnFamilyDescriptor("categories".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("redirects".getBytes(UTF_8))
   )
 
@@ -273,26 +262,7 @@ object PageDb extends Db with DbHelper {
 
     parser.parse(args, Config()) match {
       case Some(config) =>
-        if (config.inFile.nonEmpty && config.outFile.nonEmpty) {
-          PageContentDb.open()
-          val it = Source.fromFile(config.inFile.get).getLines()
-          PageContentDb.output(it, config.outFile.get)
-          PageContentDb.close()
-          LOG.info("DONE.")
-        } else if (config.show.nonEmpty) {
-          val idOrName = config.show.get
-          val (id: Int, name: String) = if (StringUtils.isNumeric(idOrName)) {
-            (idOrName.toInt, getNameById(idOrName.toInt).getOrElse("<EMPTY>"))
-          } else {
-            (getIdByName(idOrName).getOrElse(0), idOrName)
-          }
-          val content = PageContentDb.getContent(id).getOrElse("<EMPTY>")
-          println(s"$id\t\t\t$name")
-          println("---------------")
-          println(content)
-        } else {
-          parser.showUsage()
-        }
+
       case None =>
         println( """Wrong parameters :(""".stripMargin)
     }

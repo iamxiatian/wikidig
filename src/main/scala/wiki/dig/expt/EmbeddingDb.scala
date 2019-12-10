@@ -1,18 +1,14 @@
-package wiki.dig.db
+package wiki.dig.expt
 
-import java.io._
+import java.io.File
 import java.nio.charset.StandardCharsets
 
 import com.google.common.collect.Lists
-import org.rocksdb._
+import org.rocksdb.{ColumnFamilyDescriptor, ColumnFamilyHandle, DBOptions, RocksDB}
 import org.slf4j.LoggerFactory
 import wiki.dig.common.MyConf
 import wiki.dig.db.ast.{Db, DbHelper}
-import wiki.dig.repo._
-import wiki.dig.util.ByteUtil
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import scala.io.Source
 
 /**
