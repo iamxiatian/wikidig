@@ -1,10 +1,12 @@
 name := "wikidig"
 version := "0.1"
 
-scalaVersion := "2.12.3"
-sbtVersion := "1.2.1"
+scalaVersion := "2.13.1"
+sbtVersion := "1.3.2"
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
-
+javacOptions in(Compile, compile) ++= Seq("-source", "1.8",
+  "-encoding", "UTF-8",
+  "-target", "1.8", "-g:lines")
 
 lazy val root = (project in file(".")).
   enablePlugins(BuildInfoPlugin).
