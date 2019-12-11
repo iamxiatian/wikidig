@@ -4,7 +4,6 @@ import java.io._
 import java.nio.charset.StandardCharsets
 
 import com.google.common.collect.Lists
-import org.apache.commons.lang3.StringUtils
 import org.rocksdb._
 import org.slf4j.LoggerFactory
 import wiki.dig.common.MyConf
@@ -14,7 +13,6 @@ import wiki.dig.util.ByteUtil
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.io.Source
 
 /**
   * 把Concept的信息保存到RocksDB数据库中
@@ -264,7 +262,7 @@ object PageDb extends Db with DbHelper {
       case Some(config) =>
 
       case None =>
-        println( """Wrong parameters :(""".stripMargin)
+        println("""Wrong parameters :(""".stripMargin)
     }
   }
 }

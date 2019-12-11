@@ -291,7 +291,7 @@ object PageDb extends Db with DbHelper {
           println("---------------")
           println(content)
         } else {
-          parser.showUsage()
+          println(parser.usage)
         }
       case None =>
         println( """Wrong parameters :(""".stripMargin)

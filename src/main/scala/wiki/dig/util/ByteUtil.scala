@@ -36,7 +36,7 @@ object ByteUtil {
   def string2bytes(s: String): Array[Byte] = s.getBytes(StandardCharsets.UTF_8)
 
 
-  def example {
+  def example: Unit = {
     val data = "48 65 6C 6C 6F 20 57 6F 72 6C 64 21 21"
     val bytes = hex2bytes(data)
     println(bytes2hex(bytes, Option(" ")))
