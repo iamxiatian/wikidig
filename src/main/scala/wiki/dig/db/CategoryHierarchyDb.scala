@@ -6,7 +6,6 @@ import java.util.regex.Pattern
 
 import com.google.common.collect.Lists
 import com.google.common.io.Files
-import org.apache.commons.lang3.StringUtils
 import org.rocksdb._
 import org.slf4j.LoggerFactory
 import wiki.dig.common.MyConf
@@ -261,7 +260,7 @@ object CategoryHierarchyDb extends Db with DbHelper {
 
     if (title.length > 7) { //保留1980s此类词条
       val startString = title.substring(0, 4)
-      if (StringUtils.isNumeric(startString)) return false
+      if (startString.toIntOption.nonEmpty) return false
     }
 
     //step 2: remove "list of xxxx" and "index of xxx"
@@ -467,7 +466,6 @@ object CategoryHierarchyDb extends Db with DbHelper {
     *
     * 同时，把所有出现的文章id，以无重复的方式记录到pageIdsFile
     *
-    * @param f
     */
   def outputPageIds(cateogryPagesFile: File = new File("./category_pages.txt"),
                     pageIdsFile: File = new File("./page_all_ids.txt")) = {
@@ -817,7 +815,7 @@ object CategoryHierarchyDb extends Db with DbHelper {
         }
 
       case None =>
-        println( """Wrong parameters :(""".stripMargin)
+        println("""Wrong parameters :(""".stripMargin)
     }
     CategoryHierarchyDb.close()
   }

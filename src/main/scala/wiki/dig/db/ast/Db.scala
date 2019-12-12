@@ -1,7 +1,5 @@
 package wiki.dig.db.ast
 
-import java.nio.charset.StandardCharsets
-
 import scala.util.Try
 
 /**
@@ -11,7 +9,7 @@ trait Db {
 
   def open() = {}
 
-  def close()
+  def close(): Unit = {}
 
   /**
     * 清空数据库中的数据

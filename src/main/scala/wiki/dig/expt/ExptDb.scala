@@ -7,7 +7,6 @@ import java.text.DecimalFormat
 import breeze.linalg.DenseVector
 import com.google.common.collect.Lists
 import com.google.common.io.Files
-import org.apache.commons.lang3.StringUtils
 import org.rocksdb.{ColumnFamilyDescriptor, ColumnFamilyHandle, DBOptions, RocksDB}
 import org.slf4j.LoggerFactory
 import wiki.dig.common.MyConf
@@ -97,7 +96,7 @@ object ExptDb extends Db with DbHelper {
 
   def calculateVector(text: String): DenseVector[Float] = {
     //分词，并转换为词语的embedding表示的vector列表
-    val vectors: Seq[DenseVector[Float]] = StringUtils.split(text, " \t\n\r\"").map {
+    val vectors: Seq[DenseVector[Float]] = text.split(" |\t|\n|\r|\"").filter(_.nonEmpty).map {
       token =>
         if ((token.endsWith(".") && token.indexOf(".") == token.length - 1) ||
           token.endsWith(",") ||

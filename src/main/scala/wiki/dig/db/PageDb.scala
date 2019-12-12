@@ -4,7 +4,6 @@ import java.io._
 import java.nio.charset.StandardCharsets
 
 import com.google.common.collect.Lists
-import org.apache.commons.lang3.StringUtils
 import org.rocksdb._
 import org.slf4j.LoggerFactory
 import wiki.dig.common.MyConf
@@ -281,7 +280,7 @@ object PageDb extends Db with DbHelper {
           LOG.info("DONE.")
         } else if (config.show.nonEmpty) {
           val idOrName = config.show.get
-          val (id: Int, name: String) = if (StringUtils.isNumeric(idOrName)) {
+          val (id: Int, name: String) = if (idOrName.toIntOption.nonEmpty) {
             (idOrName.toInt, getNameById(idOrName.toInt).getOrElse("<EMPTY>"))
           } else {
             (getIdByName(idOrName).getOrElse(0), idOrName)
@@ -294,7 +293,7 @@ object PageDb extends Db with DbHelper {
           println(parser.usage)
         }
       case None =>
-        println( """Wrong parameters :(""".stripMargin)
+        println("""Wrong parameters :(""".stripMargin)
     }
   }
 }

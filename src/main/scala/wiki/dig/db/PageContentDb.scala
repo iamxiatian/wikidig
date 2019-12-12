@@ -5,7 +5,6 @@ import java.nio.charset.StandardCharsets
 
 import com.google.common.collect.Lists
 import com.google.common.io.Files
-import org.apache.commons.lang3.StringUtils
 import org.rocksdb._
 import org.slf4j.LoggerFactory
 import org.zhinang.util.GZipUtils
@@ -106,7 +105,7 @@ object PageContentDb extends Db {
 
   def output(ids: Iterator[String], outFile: File): Unit = {
     val writer = Files.newWriter(outFile, UTF_8)
-    ids.filter(s => s.nonEmpty && StringUtils.isNumeric(s))
+    ids.filter(s => s.nonEmpty && s.toIntOption.nonEmpty)
       .zipWithIndex
       .foreach {
         case (id, idx) =>

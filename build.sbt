@@ -1,5 +1,5 @@
 name := "wikidig"
-version := "0.1"
+version := "0.2"
 
 scalaVersion := "2.13.1"
 sbtVersion := "1.3.2"
@@ -25,12 +25,6 @@ buildInfoOptions += BuildInfoOption.ToJson
 
 libraryDependencies += "com.typesafe" % "config" % "1.3.3"
 
-//akka kryo serialization, it's faster than java serializer
-//libraryDependencies += "com.github.romix.akka" %% "akka-kryo-serialization" % "0.5.2"
-
-//XML support
-//libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
-
 //command line parser
 libraryDependencies += "com.github.scopt" %% "scopt" % "4.0.0-RC2"
 
@@ -40,33 +34,23 @@ libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.22.0"
 //Scala better file
 libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.8.0"
 
+// Google Guava
+libraryDependencies += "com.google.guava" % "guava" % "28.1-jre"
+
 //database driver
 libraryDependencies += "org.rocksdb" % "rocksdbjni" % "6.2.2"
 libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.23"
-libraryDependencies += "redis.clients" % "jedis" % "2.4.2"
 
 //spark web
 libraryDependencies += "com.sparkjava" % "spark-core" % "2.9.1"
-libraryDependencies += "commons-cli" % "commons-cli" % "1.2"
+//libraryDependencies += "commons-cli" % "commons-cli" % "1.2"
 
 
-//libraryDependencies ++= Seq(
-//  "com.typesafe.slick" %% "slick" % "3.2.2",
-//  "com.typesafe.slick" %% "slick-hikaricp" % "3.2.2"
-//)
+//slick database process
 libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
+libraryDependencies +=  "com.typesafe.slick" %% "slick-hikaricp" % "3.3.2"
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2"
-
-//add jars for zhinang modules
-//libraryDependencies += "commons-cli" % "commons-cli" % "1.2"
-libraryDependencies += "commons-codec" % "commons-codec" % "1.10"
-libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.3.1"
-libraryDependencies += "org.apache.commons" % "commons-math3" % "3.0"
-libraryDependencies += "com.google.guava" % "guava" % "24.0-jre"
-
-//HTTP
-libraryDependencies += "org.jsoup" % "jsoup" % "1.11.3"
 
 //NLP libraries
 libraryDependencies += "com.hankcs" % "hanlp" % "portable-1.6.6"
@@ -77,14 +61,6 @@ libraryDependencies += "de.tudarmstadt.ukp.wikipedia" % "de.tudarmstadt.ukp.wiki
 libraryDependencies += "de.tudarmstadt.ukp.wikipedia" % "de.tudarmstadt.ukp.wikipedia.datamachine" % "1.1.0"
 libraryDependencies += "de.tudarmstadt.ukp.wikipedia" % "de.tudarmstadt.ukp.wikipedia.util" % "1.1.0"
 libraryDependencies += "de.tudarmstadt.ukp.wikipedia" % "de.tudarmstadt.ukp.wikipedia.parser" % "1.1.0"
-
-//from wikit
-libraryDependencies += "org.apache.commons" % "commons-compress" % "1.8"
-libraryDependencies += "org.apache.commons" % "commons-collections4" % "4.0"
-libraryDependencies += "com.alibaba" % "fastjson" % "1.2.16"
-libraryDependencies += "com.fasterxml.jackson.core" % "jackson-core" % "2.4.0"
-libraryDependencies += "com.fasterxml.jackson.core" % "jackson-annotations" % "2.4.0"
-libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.4.0"
 
 //CIRCE JSON Parser, for scala
 libraryDependencies ++= Seq(

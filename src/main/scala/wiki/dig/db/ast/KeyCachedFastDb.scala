@@ -3,8 +3,8 @@ package wiki.dig.db.ast
 import org.rocksdb.{Options, RocksDB, RocksIterator}
 import org.zhinang.util.cache.LruCache
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 /**
@@ -54,6 +54,7 @@ class KeyCachedFastDb(path: String, cacheSize: Int = 2000) extends Db {
   }
   private val options = new Options().setCreateIfMissing(true)
   private val db = RocksDB.open(options, path)
+
   /**
     * 数据库中有的数据的缓存
     */
@@ -116,7 +117,6 @@ class KeyCachedFastDb(path: String, cacheSize: Int = 2000) extends Db {
 
   override def clear: Try[Unit] = Try {
     keys.toSeq.foreach(remove)
-    true
   }
 
   def remove(key: Array[Byte]): KeyCachedFastDb = {
@@ -133,7 +133,7 @@ class KeyCachedFastDb(path: String, cacheSize: Int = 2000) extends Db {
 
   def numKeys() = db.getLongProperty("rocksdb.estimate-num-keys")
 
-  def close() = {
+  override def close(): Unit = {
     println(s"===Close board db === \n\t $path ...")
     db.close()
     options.close()
@@ -141,16 +141,3 @@ class KeyCachedFastDb(path: String, cacheSize: Int = 2000) extends Db {
   }
 }
 
-//object CachableListDb {
-//  def main(args: Array[String]): Unit = {
-//
-//    val db = new CachableListDb("/tmp/test/cacheddb")
-//    db.put("xiatian".getBytes(), "beijing".getBytes())
-//    db.put("ruoxi".getBytes(), "beijing2".getBytes())
-//    db.put("ruoyi".getBytes(), "beijing3".getBytes())
-//    db.put("luyu".getBytes(), "beijing4".getBytes())
-//    db.elements(1, 4).foreach {
-//      case (k, v) => println(s"${new String(k)} = ${new String(v)}")
-//    }
-//  }
-//}
