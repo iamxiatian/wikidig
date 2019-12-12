@@ -280,7 +280,7 @@ class SortedSetDb(dbName: String, //数据库的别名，方便调试和日志�
     db.delete(keyScoreHandler, key)
   }
 
-  def close() = {
+  override def close() = {
     println(s"===Close $dbName === \n\t $path ...")
     println("\t save counter...")
     saveKeyCounter()

@@ -128,7 +128,7 @@ class QueueListDb(path: String,
 
   def rearPosition() = rear.get()
 
-  def close() = {
+  override def close() = {
     if (db != null) db.close
     if (options != null) options.close
   }

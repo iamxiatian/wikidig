@@ -3,8 +3,8 @@ package wiki.dig.parser
 import de.tudarmstadt.ukp.wikipedia.parser.ParsedPage
 import de.tudarmstadt.ukp.wikipedia.parser.mediawiki.{MediaWikiParser, MediaWikiParserFactory}
 
-import scala.collection.JavaConverters._
 import scala.io.Source
+import scala.jdk.CollectionConverters._
 
 class WikiPage {
 

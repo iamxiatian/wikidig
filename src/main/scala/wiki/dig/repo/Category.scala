@@ -61,7 +61,7 @@ object CategoryRepo extends Repo[Category] {
     */
   def root(): Future[Option[Category]] = db.run {
     if(MyConf.wikiLang == "zh")
-      entities.filter(r => r.name === "页面分类" || r.name == "頁面分類").result.headOption
+      entities.filter(r => r.name === "页面分类" || r.name === "頁面分類").result.headOption
     else
       entities.filter(_.name === "Main_topic_classifications").result.headOption
   }

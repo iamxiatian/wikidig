@@ -160,7 +160,7 @@ class QueueMapDb(path: String,
     }
   }
 
-  def close() = {
+  override def close() = {
     cfHandlers.forEach(_.close)
     if (db != null) db.close
     if (options != null) options.close

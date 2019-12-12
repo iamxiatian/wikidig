@@ -3,6 +3,7 @@ package wiki.dig.algorithm
 import better.files.File
 import wiki.dig.db.{CategoryDb, CategoryHierarchyDb}
 
+import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 import scala.util.Random
 
@@ -113,7 +114,7 @@ object SubGraphGenerator {
     }.filter(_._2 == 0).keys.toSet
 
     val okIds = (groups.keys.toSet -- zeroDegreeIds).toArray
-    val processIds: mutable.Set[Int] = mutable.Set(okIds: _ *)
+    val processIds: mutable.Set[Int] = mutable.Set(ArraySeq.unsafeWrapArray(okIds): _ *)
 
     zeroDegreeIds foreach {
       id =>

@@ -94,7 +94,7 @@ object CategoryHierarchyDb extends Db with DbHelper {
     def empty = AcTuple(0, 0L)
   }
 
-  def saveArticleCount(id: Int, count: AcTuple) {
+  def saveArticleCount(id: Int, count: AcTuple): Unit = {
     db.put(articleCountHandler, ByteUtil.int2bytes(id), count.toBytes)
   }
 
@@ -233,6 +233,8 @@ object CategoryHierarchyDb extends Db with DbHelper {
             //记录深度
             depthCountCache.put(node.depth,
               depthCountCache.getOrElse(node.depth, AcTuple.empty) + tuple)
+
+          case None =>
         }
     }
 

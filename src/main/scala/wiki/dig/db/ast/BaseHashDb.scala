@@ -44,7 +44,7 @@ abstract class BaseHashDb(val dbName: String, val dbPath: File) extends Db {
 
   def numKeys(): Long = db.getLongProperty("rocksdb.estimate-num-keys")
 
-  def close(): Unit = {
+  override def close(): Unit = {
     println(s"===Close DB $dbName === \n\t $dbPath ...")
 
     cfHandlers.forEach(_.close())

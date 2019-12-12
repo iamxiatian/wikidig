@@ -19,6 +19,9 @@ import scala.util.Try
 class KeyCachedFastDb(path: String, cacheSize: Int = 2000) extends Db {
   RocksDB.loadLibrary()
 
+  private val options = new Options().setCreateIfMissing(true)
+  private val db = RocksDB.open(options, path)
+
   val keys: mutable.SortedSet[Array[Byte]] = {
     implicit val o = new math.Ordering[Array[Byte]] {
       def compare(a: Array[Byte], b: Array[Byte]): Int = {
@@ -52,8 +55,6 @@ class KeyCachedFastDb(path: String, cacheSize: Int = 2000) extends Db {
     }
     sortedSet
   }
-  private val options = new Options().setCreateIfMissing(true)
-  private val db = RocksDB.open(options, path)
 
   /**
     * 数据库中有的数据的缓存
