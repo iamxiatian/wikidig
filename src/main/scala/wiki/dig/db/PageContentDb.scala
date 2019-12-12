@@ -53,7 +53,7 @@ object PageContentDb extends Db {
 
   protected val defaultHandler: ColumnFamilyHandle = cfHandlers.get(0)
 
-  def build(startId: Int = 1, batchSize: Int = 1000) = {
+  def build(startId: Int = 0, batchSize: Int = 1000) = {
     val maxId = Await.result(PageRepo.maxId(), Duration.Inf).get
     //val maxId = 58046434 //最大的id
 
