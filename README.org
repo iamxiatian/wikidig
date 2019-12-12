@@ -3,11 +3,11 @@
 wikidig: Dig Wikipedia Knowledge.
 
 ** 使用示例
-```
+#+BEGIN_SRC scala
     val id = 1323
     val name = PageDb.getNameById(id).getOrElse("<empty>")
     val content = PageContentDb.getContent(id).getOrElse("<empty>")
-```
+#+END_SRC
 
 ** 提供的数据库及功能
 wikidig将维基百科数据经过清洗变换之后，保存到rocksdb数据库之中，以方便独立运行，避免对第三方数据库的依赖。目前的数据库对象及功能如下：
