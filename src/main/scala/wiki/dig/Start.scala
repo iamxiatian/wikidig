@@ -8,6 +8,9 @@ import wiki.dig.expt.{EmbeddingDb, ExptDb}
 
 /**
   * Application Start
+  *
+  * 构建维基百科的全文本地数据库：
+  * nohup ./bin/start --buildPageDb --buildPageContentDb --startId=0 --batchSize=1000 &
   */
 object Start extends App {
 

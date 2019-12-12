@@ -52,7 +52,6 @@ object PageRepo extends Repo[Page] {
   /**
     * 获取维基页面的基本信息，不包含全文
     *
-    * @param page
     * @param limit
     * @return
     */
