@@ -279,11 +279,11 @@ http://ftp.acc.umu.se/mirror/wikimedia.org/dumps/zhwiki/20170520/
 
 *** 创建数据库语句
 
-    CREATE DATABASE digger DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
+#+BEGIN_SRC sql
+    CREATE DATABASE zhwiki DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
     CREATE USER 'xiatian'@'%' IDENTIFIED BY 'password';
-
     GRANT ALL ON digger.* TO 'xiatian'@'%';
+#+END_SRC
 
 *** 数据库中文乱码问题：
     use digger
