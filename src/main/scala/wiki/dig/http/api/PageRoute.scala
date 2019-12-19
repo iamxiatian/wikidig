@@ -37,13 +37,5 @@ object PageRoute extends JsonSupport with Logging {
       case None =>
         jsonError(s"词条不存在：$name")
     }
-    val inlinks = PageDb.getInlinks(pageId)
-    AccountRepo.findByEmail(email) match {
-      case Some(account) =>
-        jsonOk(account.toJson)
-      case None =>
-        LOG.error(s"email: $email ")
-        jsonError("用户邮箱不存在！.")
-    }
   }
 }
