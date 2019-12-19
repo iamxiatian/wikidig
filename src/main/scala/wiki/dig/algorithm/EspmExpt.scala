@@ -2,8 +2,8 @@ package wiki.dig.algorithm
 
 import java.io.File
 
-import wiki.dig.db.{CategoryHierarchyDb, PageContentDb, PageDb}
 import wiki.dig.parser.WikiPage
+import wiki.dig.store.db.{CategoryHierarchyDb, PageContentDb, PageDb}
 
 class EspmExpt {
   def firstRun(): Unit = {

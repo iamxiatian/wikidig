@@ -6,8 +6,8 @@ import java.nio.charset.StandardCharsets
 import com.google.common.collect.Lists
 import org.rocksdb.{ColumnFamilyDescriptor, ColumnFamilyHandle, DBOptions, RocksDB}
 import org.slf4j.LoggerFactory
-import wiki.dig.common.MyConf
-import wiki.dig.db.ast.{Db, DbHelper}
+import wiki.dig.MyConf
+import wiki.dig.store.db.ast.{Db, DbHelper}
 
 import scala.io.Source
 

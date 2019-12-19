@@ -2,9 +2,9 @@ package wiki.dig
 
 import java.io.File
 
-import wiki.dig.common.{BuildInfo, MyConf}
-import wiki.dig.db._
+import wiki.dig.common.BuildInfo
 import wiki.dig.expt.{EmbeddingDb, ExptDb}
+import wiki.dig.store.db.{CategoryDb, CategoryHierarchyDb, PageContentDb, PageDb}
 
 /**
   * Application Start
@@ -118,7 +118,7 @@ object Start extends App {
         ExptDb.buildArticleEmbedding()
       }
     case None => {
-      println( """Wrong parameters :(""".stripMargin)
+      println("""Wrong parameters :(""".stripMargin)
     }
 
   }

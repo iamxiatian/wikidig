@@ -1,7 +1,7 @@
 package wiki.dig.algorithm
 
 import better.files.File
-import wiki.dig.db.{CategoryDb, CategoryHierarchyDb}
+import wiki.dig.store.db.{CategoryDb, CategoryHierarchyDb}
 
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
@@ -29,7 +29,7 @@ object SubGraphGenerator {
 
   case object LeftRight extends Direction
 
-  import CategoryHierarchyDb.startNodeIds
+  import wiki.dig.store.db.CategoryHierarchyDb.startNodeIds
 
   /**
     * 挑选一个随机种子，后面会根据该种子节点，不断随机跳转得到一个子图。

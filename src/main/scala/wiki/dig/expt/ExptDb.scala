@@ -9,9 +9,9 @@ import com.google.common.collect.Lists
 import com.google.common.io.Files
 import org.rocksdb.{ColumnFamilyDescriptor, ColumnFamilyHandle, DBOptions, RocksDB}
 import org.slf4j.LoggerFactory
-import wiki.dig.common.MyConf
-import wiki.dig.db.ast.{Db, DbHelper}
-import wiki.dig.db.{CategoryDb, PageContentDb}
+import wiki.dig.MyConf
+import wiki.dig.store.db.ast.{Db, DbHelper}
+import wiki.dig.store.db.{CategoryDb, PageContentDb}
 import wiki.dig.util.ByteUtil
 
 import scala.io.Source

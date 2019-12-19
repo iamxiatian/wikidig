@@ -5,8 +5,7 @@ import java.nio.charset.StandardCharsets
 import better.files.File
 import breeze.stats.distributions.Rand
 import org.joda.time.DateTime
-import wiki.dig.algorithm.SubGraphGenerator.generate
-import wiki.dig.db.{CategoryDb, CategoryHierarchyDb}
+import wiki.dig.store.db.{CategoryDb, CategoryHierarchyDb}
 
 import scala.collection.mutable
 import scala.util.{Random, Success, Try}

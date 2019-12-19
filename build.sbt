@@ -79,6 +79,7 @@ libraryDependencies ++= Seq(
   "org.apache.lucene" % "lucene-highlighter" % luceneVersion,
 )
 
+//Machine learning
 libraryDependencies  ++= Seq(
   // Last stable release
   "org.scalanlp" %% "breeze" % "1.0",
@@ -93,6 +94,7 @@ libraryDependencies  ++= Seq(
   // It depends on LGPL code
   //"org.scalanlp" %% "breeze-viz" % "1.0"
 )
+libraryDependencies += "com.github.haifengl" % "smile-core" % "2.0.0"
 
 resolvers += "central" at "http://maven.aliyun.com/nexus/content/groups/public/"
 externalResolvers := Resolver.defaults
@@ -100,7 +102,7 @@ externalResolvers := Resolver.defaults
 //native package
 enablePlugins(JavaServerAppPackaging)
 
-mainClass in Compile := Some("content.security.http.HttpServer")
+mainClass in Compile := Some("wiki.dig.http.HttpServer")
 
 //解决windows的line too long问题
 scriptClasspath := Seq("*")

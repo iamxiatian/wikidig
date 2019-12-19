@@ -1,4 +1,4 @@
-package wiki.dig.expt
+package wiki.dig.store.db
 
 import java.io._
 import java.nio.charset.StandardCharsets
@@ -6,15 +6,17 @@ import java.nio.charset.StandardCharsets
 import com.google.common.collect.Lists
 import org.rocksdb._
 import org.slf4j.LoggerFactory
-import org.zhinang.util.GZipUtils
 import wiki.dig.MyConf
-import wiki.dig.parser.WikiPage
 import wiki.dig.store.db.ast.{Db, DbHelper}
-import wiki.dig.store.db.{CategoryHierarchyDb, PageContentDb, PageDb}
+import wiki.dig.store.repo._
 import wiki.dig.util.ByteUtil
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import scala.io.Source
+
 /**
-  * 把试验用的Page的信息保存到RocksDB数据库中，里面记录的信息包括：
+  * 把Page的信息保存到RocksDB数据库中，里面记录的信息包括：
   *
   * Page的id:name双向映射关系，来自于数据库的Page. 由于有别名的存在，一个ID会对应到一个
   * 标准的词条名称上，但是有多个名称（规范的和非规范的）映射到一个id上。
@@ -26,15 +28,13 @@ import wiki.dig.util.ByteUtil
   * 页面指向的类别，来自于page_categories
   *
   * Page Redirects，来自于表：page_redirects
-  *
-  * 页面去除维基标记后的文本内容
   */
-object ExptPageDb extends Db with DbHelper {
+object PageDb extends Db with DbHelper {
   val LOG = LoggerFactory.getLogger(this.getClass)
 
   import StandardCharsets.UTF_8
 
-  val dbPath = new File(MyConf.dbRootDir, "expt/page")
+  val dbPath = new File(MyConf.dbRootDir, "page/main")
   if (!dbPath.getParentFile.exists())
     dbPath.getParentFile.mkdirs()
 
@@ -51,8 +51,7 @@ object ExptPageDb extends Db with DbHelper {
     new ColumnFamilyDescriptor("inlinks".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("outlinks".getBytes(UTF_8)),
     new ColumnFamilyDescriptor("category".getBytes(UTF_8)),
-    new ColumnFamilyDescriptor("redirects".getBytes(UTF_8)),
-    new ColumnFamilyDescriptor("content".getBytes(UTF_8))
+    new ColumnFamilyDescriptor("redirects".getBytes(UTF_8))
   )
 
   protected val cfHandlers = Lists.newArrayList[ColumnFamilyHandle]
@@ -66,40 +65,39 @@ object ExptPageDb extends Db with DbHelper {
   protected val outlinksHandler: ColumnFamilyHandle = cfHandlers.get(4)
   protected val categoryHandler: ColumnFamilyHandle = cfHandlers.get(5)
   protected val redirectsHandler: ColumnFamilyHandle = cfHandlers.get(6)
-  protected val contentHandler: ColumnFamilyHandle = cfHandlers.get(7)
 
-  def build(startId: Int = 9972945, batchSize: Int = 1000) = {
-    //将层次类别中涉及的文章id输出到文件中
-    val pageIdFile = new File("./expt/page_id.txt")
-    val pageIds = CategoryHierarchyDb.dumpPageIds(pageIdFile)
-    var cnt = 0
-    pageIds foreach {
-      case pageId =>
-        cnt += 1
-        val title = PageDb.getNameById(pageId)
-        val plainText = PageContentDb.getContent(pageId).flatMap {
-          t =>
-            WikiPage.getPlainText(t)
-        }
+  def build(startId: Int = 0, batchSize: Int = 1000) = {
+    //val maxId = 58046434 //最大的id
+    val maxId = Await.result(PageRepo.maxId(), Duration.Inf).get
 
-        if (title.nonEmpty && plainText.nonEmpty) {
-          val inlinks = PageDb.getInlinks(pageId) filter pageIds.contains
-          val outlinks = PageDb.getOutlinks(pageId) filter pageIds.contains
-          val redirects = PageDb.getRedirects(pageId)
-          val categoryIds = PageDb.getCategories(pageId)
-          saveIdName(pageId, title.get)
-          saveInlinks(pageId, inlinks)
-          saveOutlinks(pageId, outlinks)
-          saveRedirects(pageId, redirects)
-          saveCategories(pageId, categoryIds)
-          saveContent(pageId, plainText.get)
+    var fromId = startId
 
-          if (PageDb.isDisambiguation(pageId)) saveDisambiguation(pageId)
-        }
+    while (fromId < maxId) {
+      println(s"process $fromId / $maxId ...")
+      val pages = Await.result(PageRepo.listBasicInfoFromId(fromId, batchSize), Duration.Inf)
+      pages.foreach {
+        case (id, name, disambiguation) =>
+          //print(".")
+          saveIdName(id, name)
+          saveInlinks(id)
+          saveOutlinks(id)
 
-        if (cnt % 1000 == 0) {
-          println(s"process $cnt / ${pageIds.size} ...")
-        }
+          //只记录是消歧义的页面，其他情况默认为非歧义页面
+          if (disambiguation) {
+            saveDisambiguation(id)
+          }
+
+          //保存页面对应的分类
+          saveCategories(id)
+
+          //保存指向该页面的别名
+          saveRedirects(id)
+
+          fromId = id
+      }
+      //println()
+
+      fromId = fromId + 1
     }
 
     println("DONE")
@@ -134,27 +132,11 @@ object ExptPageDb extends Db with DbHelper {
   ).map(ByteUtil.bytes2Int)
 
 
-  private def saveContent(id: Int, content: String) = {
-    val key = ByteUtil.int2bytes(id)
-    val value = GZipUtils.compress(content.getBytes(UTF_8))
-    //    val value = content.getBytes(UTF_8)
-    db.put(contentHandler, key, value)
-  }
-
-  def getContent(id: Int): Option[String] = Option(
-    db.get(contentHandler, ByteUtil.int2bytes(id))
-  ) match {
-    case Some(bytes) =>
-      val unzipped = GZipUtils.decompress(bytes)
-      Option(new String(unzipped, UTF_8))
-
-    case None => None
-  }
-
   /**
     * 保存文章的入链列表
     */
-  private def saveInlinks(id: Int, links: Seq[Int]) = {
+  private def saveInlinks(id: Int) = {
+    val links = Await.result(PageInlinkRepo.findInlinksById(id), Duration.Inf)
     val key = ByteUtil.int2bytes(id)
     val value = getBytesFromIntSeq(links)
     db.put(inlinksHandler, key, value)
@@ -174,7 +156,8 @@ object ExptPageDb extends Db with DbHelper {
     db.get(inlinksHandler, ByteUtil.int2bytes(id))
   ).map(readSeqSizeFromBytes)
 
-  private def saveOutlinks(id: Int, links: Seq[Int]) = {
+  private def saveOutlinks(id: Int) = {
+    val links = Await.result(PageOutlinkRepo.findOutlinksById(id), Duration.Inf)
     val key = ByteUtil.int2bytes(id)
     val value = getBytesFromIntSeq(links)
     db.put(outlinksHandler, key, value)
@@ -191,9 +174,10 @@ object ExptPageDb extends Db with DbHelper {
     db.get(outlinksHandler, ByteUtil.int2bytes(id))
   ).map(readSeqSizeFromBytes)
 
-  private def saveCategories(id: Int, categoryIds: Seq[Int]) = {
+  private def saveCategories(id: Int) = {
+    val ids = Await.result(PageCategoryRepo.findCategoriesById(id), Duration.Inf)
     val key = ByteUtil.int2bytes(id)
-    val value = getBytesFromIntSeq(categoryIds)
+    val value = getBytesFromIntSeq(ids)
     db.put(categoryHandler, key, value)
   }
 
@@ -208,7 +192,8 @@ object ExptPageDb extends Db with DbHelper {
     db.get(categoryHandler, ByteUtil.int2bytes(id))
   ).map(readSeqSizeFromBytes)
 
-  private def saveRedirects(id: Int, redirects: Seq[String]) = {
+  private def saveRedirects(id: Int) = {
+    val redirects = Await.result(PageRedirectRepo.findRedirects(id), Duration.Inf)
     val key = ByteUtil.int2bytes(id)
     val value = getBytesFromStringSeq(redirects)
     db.put(redirectsHandler, key, value)
@@ -257,7 +242,7 @@ object ExptPageDb extends Db with DbHelper {
   /**
     * 数据库名字
     */
-  def dbName: String = "Expt Page DB"
+  def dbName: String = "Page DB"
 
   override def close(): Unit = {
     print(s"==> Close $dbName ... ")
@@ -272,7 +257,7 @@ object ExptPageDb extends Db with DbHelper {
                       outFile: Option[File] = None,
                       show: Option[String] = None)
 
-    val parser = new scopt.OptionParser[Config]("bin/expt-content-db") {
+    val parser = new scopt.OptionParser[Config]("bin/page-content-db") {
       head("output page content from id text file.")
 
       opt[File]('i', "inFile").optional().action((x, c) =>
@@ -287,9 +272,28 @@ object ExptPageDb extends Db with DbHelper {
 
     parser.parse(args, Config()) match {
       case Some(config) =>
-
+        if (config.inFile.nonEmpty && config.outFile.nonEmpty) {
+          PageContentDb.open()
+          val it = Source.fromFile(config.inFile.get).getLines()
+          PageContentDb.output(it, config.outFile.get)
+          PageContentDb.close()
+          LOG.info("DONE.")
+        } else if (config.show.nonEmpty) {
+          val idOrName = config.show.get
+          val (id: Int, name: String) = if (idOrName.toIntOption.nonEmpty) {
+            (idOrName.toInt, getNameById(idOrName.toInt).getOrElse("<EMPTY>"))
+          } else {
+            (getIdByName(idOrName).getOrElse(0), idOrName)
+          }
+          val content = PageContentDb.getContent(id).getOrElse("<EMPTY>")
+          println(s"$id\t\t\t$name")
+          println("---------------")
+          println(content)
+        } else {
+          println(parser.usage)
+        }
       case None =>
-        println( """Wrong parameters :(""".stripMargin)
+        println("""Wrong parameters :(""".stripMargin)
     }
   }
 }

@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 
 import com.google.common.io.Files
-import wiki.dig.db.{CategoryDb, CategoryHierarchyDb}
+import wiki.dig.store.db.{CategoryDb, CategoryHierarchyDb}
 
 import scala.util.Random
 
