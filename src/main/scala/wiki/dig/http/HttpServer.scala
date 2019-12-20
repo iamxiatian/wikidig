@@ -3,7 +3,7 @@ package wiki.dig.http
 import spark.Spark.{port, staticFiles, _}
 import spark.{Request, Response}
 import wiki.dig.MyConf
-import wiki.dig.http.route.{JsonSupport, PageRoute}
+import wiki.dig.http.route.{JsonSupport, KeywordRoute, WikiPageRoute}
 import wiki.dig.util.Logging
 
 /**
@@ -14,13 +14,14 @@ object HttpServer extends App with Logging {
   staticFiles.externalLocation(MyConf.webRoot)
 
   // 注册路由
-  PageRoute.register()
+  WikiPageRoute.register()
+  KeywordRoute.register()
 
   before((request, response) => {
     def foo(request: Request, response: Response): Unit = new JsonSupport {
       LOG.debug(request.requestMethod() + ": " + request.pathInfo())
 
-      val accessable = true 
+      val accessable = true
       if (!accessable) halt(401, jsonError("非授权访问！"))
     }
 

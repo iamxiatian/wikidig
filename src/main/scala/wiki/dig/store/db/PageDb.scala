@@ -106,8 +106,8 @@ object PageDb extends Db with DbHelper {
   /**
     * 获取当前页面的入链和出链之和
     */
-  def getLinkedCount(cid: Int): Int = {
-    getInlinkCount(cid).getOrElse(0) + getOutlinkCount(cid).getOrElse(0)
+  def getLinkedCount(pageId: Int): Int = {
+    getInlinkCount(pageId).getOrElse(0) + getOutlinkCount(pageId).getOrElse(0)
   }
 
   /**

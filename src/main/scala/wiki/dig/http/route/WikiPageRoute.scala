@@ -6,7 +6,7 @@ import spark.{Request, Response, Route}
 import wiki.dig.store.db.{PageContentDb, PageDb}
 import wiki.dig.util.Logging
 
-object PageRoute extends JsonSupport with Logging {
+object WikiPageRoute extends JsonSupport with Logging {
   def register(): Unit = {
     //获取账号根据邮箱
     get("/wiki/page", "text/html", showPageHtml)
@@ -31,15 +31,17 @@ object PageRoute extends JsonSupport with Logging {
           id =>
             PageDb.getNameById(id).map {
               linkName =>
-                s"""<li><a href="?name=${linkName}">${linkName}</a></li>"""
+                val count = PageDb.getLinkedCount(id)
+                s"""<li><a href="?name=${linkName}">${linkName}</a>($count)</li>"""
             }
         }.mkString("<ul>", "\n", "</ul>")
 
-        val outlinks = PageDb.getInlinks(pageId).flatMap {
+        val outlinks = PageDb.getOutlinks(pageId).flatMap {
           id =>
             PageDb.getNameById(id).map {
               linkName =>
-                s"""<li><a href="?name=${linkName}">${linkName}</a></li>"""
+                val count = PageDb.getLinkedCount(id)
+                s"""<li><a href="?name=${linkName}">${linkName}</a>($count)</li>"""
             }
         }.mkString("<ul>", "\n", "</ul>")
 
@@ -47,6 +49,7 @@ object PageRoute extends JsonSupport with Logging {
            |<html>
            |<head><title>${name}</title></head>
            |<body>
+           |  <h1>$name</h1>
            |  <h2>Inlinks:</h2>
            |  ${inlinks}
            |  <h2>Outlinks:</h2>
