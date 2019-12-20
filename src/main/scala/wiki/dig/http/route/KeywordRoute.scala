@@ -28,7 +28,7 @@ object KeywordRoute extends JsonSupport with Logging {
 
 
   private def test: Route = (request: Request, _: Response) => {
-    val topN = Option(request.queryMap("id").value()).flatMap(_.toIntOption).getOrElse(5)
+    val topN = Option(request.queryMap("topN").value()).flatMap(_.toIntOption).getOrElse(5)
 
     Option(request.queryMap("id").value()).flatMap(_.toIntOption) match {
       case Some(id) =>

@@ -22,28 +22,36 @@ object WikiPageRoute extends JsonSupport with Logging {
     }
   }
 
+  /**
+    * 把一组由维基词条id构成的序列，转换为一组链接拼成的字符串，方便在网页中展示
+    *
+    * @param links
+    * @return
+    */
+  private def linkToHtml(links: Seq[Int]): String = {
+    links.flatMap {
+      id =>
+        PageDb.getNameById(id).map {
+          linkName =>
+            val count = PageDb.getLinkedCount(id)
+            (linkName, count)
+        }
+    }
+      .sortBy(_._2)(Ordering.Int.reverse)
+      .map {
+        case (linkName, count) =>
+          s"""<li><a href="?name=${linkName}">${linkName}</a>($count)</li>"""
+      }
+      .mkString("<ul>", "\n", "</ul>")
+  }
+
   def showPageHtml: Route = (request: Request, _: Response) => {
     //val name = Option(request.params(":name")).getOrElse("").trim
     val name = Option(request.queryMap("name").value()).getOrElse("").trim
     PageDb.getIdByName(name) match {
       case Some(pageId) =>
-        val inlinks = PageDb.getInlinks(pageId).flatMap {
-          id =>
-            PageDb.getNameById(id).map {
-              linkName =>
-                val count = PageDb.getLinkedCount(id)
-                s"""<li><a href="?name=${linkName}">${linkName}</a>($count)</li>"""
-            }
-        }.mkString("<ul>", "\n", "</ul>")
-
-        val outlinks = PageDb.getOutlinks(pageId).flatMap {
-          id =>
-            PageDb.getNameById(id).map {
-              linkName =>
-                val count = PageDb.getLinkedCount(id)
-                s"""<li><a href="?name=${linkName}">${linkName}</a>($count)</li>"""
-            }
-        }.mkString("<ul>", "\n", "</ul>")
+        val inlinks = linkToHtml(PageDb.getInlinks(pageId))
+        val outlinks = linkToHtml(PageDb.getOutlinks(pageId))
 
         s"""
            |<html>
