@@ -4,12 +4,14 @@ import spark.Spark.{port, staticFiles, _}
 import spark.{Request, Response}
 import wiki.dig.MyConf
 import wiki.dig.http.route.{JsonSupport, KeywordRoute, WikiPageRoute}
-import wiki.dig.util.Logging
+import wiki.dig.util.{Logging, Segment}
 
 /**
   * 启动服务的入口程序
   */
 object HttpServer extends App with Logging {
+  Segment.init()
+  
   port(MyConf.webPort)
   staticFiles.externalLocation(MyConf.webRoot)
 
