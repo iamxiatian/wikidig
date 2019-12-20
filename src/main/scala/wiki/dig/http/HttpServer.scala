@@ -20,7 +20,7 @@ object HttpServer extends App with Logging {
     def foo(request: Request, response: Response): Unit = new JsonSupport {
       LOG.debug(request.requestMethod() + ": " + request.pathInfo())
 
-      val accessable = false
+      val accessable = true 
       if (!accessable) halt(401, jsonError("非授权访问！"))
     }
 
