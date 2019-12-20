@@ -1,4 +1,4 @@
-package wiki.dig.http.api
+package wiki.dig.http.route
 
 import io.circe.syntax._
 import spark.Spark._

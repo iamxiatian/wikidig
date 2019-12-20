@@ -6,7 +6,6 @@ import org.xml.sax.SAXException;
 import org.zhinang.conf.Configuration;
 import ruc.irm.extractor.commons.ExtractConf;
 import ruc.irm.extractor.keyword.TextRankExtractor;
-import ruc.irm.extractor.keyword.Word2VecKMeansExtractor;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
@@ -57,7 +56,7 @@ public class ExtractKeywordEvaluation {
 
         TextRankExtractor clusterWeightedExtractor = new TextRankExtractor(ClusterPositionRank);
 
-        Word2VecKMeansExtractor word2vecExtractor = new Word2VecKMeansExtractor(conf);
+        //Word2VecKMeansExtractor word2vecExtractor = new Word2VecKMeansExtractor(conf);
 
         //新算法
         TextRankExtractor positionDivRankExtractor = new TextRankExtractor(PositionDivRank);

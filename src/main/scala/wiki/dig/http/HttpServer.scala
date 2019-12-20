@@ -3,7 +3,7 @@ package wiki.dig.http
 import spark.Spark.{port, staticFiles, _}
 import spark.{Request, Response}
 import wiki.dig.MyConf
-import wiki.dig.http.api.{JsonSupport, PageRoute}
+import wiki.dig.http.route.{JsonSupport, PageRoute}
 import wiki.dig.util.Logging
 
 /**

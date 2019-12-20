@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.zhinang.conf.Configuration;
 import ruc.irm.extractor.commons.ChineseStopKeywords;
 import ruc.irm.extractor.commons.ExtractConf;
-import ruc.irm.extractor.keyword.divrank.ClusterWordDivGraph;
 import ruc.irm.extractor.keyword.divrank.PositionWordDivGraph;
 import ruc.irm.extractor.keyword.graph.*;
 import ruc.irm.extractor.nlp.SegmentFactory;
@@ -100,14 +99,10 @@ public class TextRankExtractor implements KeywordExtractor {
                 wordGraph = new PositionWordGraph(0.33f, 0.34f, 0.33f, true);
             } else if(graphType == GraphType.NingJianfei){
                 wordGraph = new EmbeddingWordGraph(alpha, beta, gamma, true);
-            } else if(graphType == GraphType.ClusterRank){
-                wordGraph = new ClusterWordGraph(0.5f, 0, 0.5f, topN, true);
-            } else if(graphType == GraphType.PositionDivRank){
+            }  else if(graphType == GraphType.PositionDivRank){
                 wordGraph = new PositionWordDivGraph(0.33f, 0.34f, 0.33f, true);
-            }else if(graphType == GraphType.ClusterDivRank){
-                wordGraph = new ClusterWordDivGraph(0.5f, 0, 0.5f, topN, true);
             } else {
-                wordGraph = new ClusterWordGraph(0.33f, 0.34f, 0.33f, topN, true);
+                wordGraph = new PositionWordGraph(0.33f, 0.34f, 0.33f, true);
             }
             wordGraph.build(title, lambda);
             wordGraph.build(content, 1.0f);

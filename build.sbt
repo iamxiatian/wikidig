@@ -23,6 +23,8 @@ buildInfoKeys += buildInfoBuildNumber
 buildInfoOptions += BuildInfoOption.BuildTime
 buildInfoOptions += BuildInfoOption.ToJson
 
+libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.2.0"
+
 libraryDependencies += "com.typesafe" % "config" % "1.3.3"
 
 //command line parser
@@ -43,12 +45,10 @@ libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.23"
 
 //spark web
 libraryDependencies += "com.sparkjava" % "spark-core" % "2.9.1"
-//libraryDependencies += "commons-cli" % "commons-cli" % "1.2"
-
 
 //slick database process
 libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
-libraryDependencies +=  "com.typesafe.slick" %% "slick-hikaricp" % "3.3.2"
+libraryDependencies += "com.typesafe.slick" %% "slick-hikaricp" % "3.3.2"
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2"
 
@@ -80,7 +80,7 @@ libraryDependencies ++= Seq(
 )
 
 //Machine learning
-libraryDependencies  ++= Seq(
+libraryDependencies ++= Seq(
   // Last stable release
   "org.scalanlp" %% "breeze" % "1.0",
 
@@ -111,6 +111,7 @@ scriptClasspath := Seq("*")
 mappings in(Compile, packageDoc) := Seq()
 
 //把运行时需要的配置文件拷贝到打包后的主目录下
+
 import NativePackagerHelper._
 
 //mappings in Universal += file("my.conf") -> "my.conf"

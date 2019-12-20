@@ -1,4 +1,4 @@
-package wiki.dig.http.api
+package wiki.dig.http.route
 
 import io.circe._
 import io.circe.parser._
