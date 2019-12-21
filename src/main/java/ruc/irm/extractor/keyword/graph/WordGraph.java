@@ -44,6 +44,9 @@ public abstract class WordGraph {
         this.segment = SegmentFactory.getSegment(new Configuration());
     }
 
+    public Map<String, WordNode> getWordNodeMap() {
+        return wordNodeMap;
+    }
 
     /**
      * 直接通过传入的词语和重要性列表构建关键词图

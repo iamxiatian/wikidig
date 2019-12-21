@@ -1,8 +1,10 @@
 package wiki.dig.algorithm.keyword
 
-import wiki.dig.util.Segment
+import ruc.irm.extractor.keyword.graph.PositionWordGraph
+import wiki.dig.util.{DotFile, Segment}
 
-import scala.xml.XML
+import scala.jdk.CollectionConverters._
+import scala.xml.{Node, NodeSeq, XML}
 
 /**
   * 关键词抽取的测试文章集合
@@ -11,7 +13,7 @@ object ArticleDataset {
 
   val doc = XML.loadFile("data/articles.xml")
 
-  lazy val articles = doc \\ "article"
+  lazy val articles: NodeSeq = doc \\ "article"
 
   /** 文章总数量 */
   lazy val articleCount = articles.length
@@ -46,8 +48,29 @@ object ArticleDataset {
     (articles(id) \ "content").text
   )
 
+  def getArticle(node: Node): Article = Article(
+    (node \ "url").text,
+    (node \ "title").text,
+    (node \ "tags").text.split(",").map(_.trim).filter(_.nonEmpty),
+    (node \ "content").text
+  )
+
   def tags(articleId: Int): String = (articles(articleId) \ "tags").text
 
+  def toDotFile(id: Int, dotFile: String): Unit = {
+    val article = ArticleDataset.getArticle(id)
+    val g = new PositionWordGraph(1, 0, 0, true)
+    g.build(article.title, 30)
+    g.build(article.content, 1.0f)
+
+    val pairs: Seq[(String, String)] = g.getWordNodeMap.asScala.toSeq.flatMap {
+      case (name, node) =>
+        //转换为二元组对：（词语，词语右侧相邻的词语）
+        node.getRightNeighbors.asScala.map((name, _))
+    }
+
+    DotFile.toDotFile(pairs, dotFile)
+  }
 }
 
 case class Article(url: String,

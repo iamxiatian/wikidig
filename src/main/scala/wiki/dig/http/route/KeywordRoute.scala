@@ -24,9 +24,88 @@ object KeywordRoute extends JsonSupport with Logging {
     get("/keyword/extract.do", "application/json", extract)
 
     get("/keyword/test", "text/html", test)
+
+    get("/keyword/graph", "text/html", getWordGraph)
+
+    get("/keyword/show_article", "text/html", showArticle)
+
+    get("/keyword/failure_list", "text/html", extractFailureList)
+
+  }
+
+  lazy val allResults = ArticleDataset.articles.zipWithIndex.map {
+    case (node, idx) =>
+      val article = ArticleDataset.getArticle(node)
+      val keywords: Seq[String] = weightedExtractor.extractAsList(article.title, article.content, 10).asScala.toSeq
+      val tags = article.tags
+
+      //抽取结果中，tags至少包含一个
+      val existedOne = keywords.exists(tags.contains(_))
+      val indicator = if (existedOne) "GOOD" else "BAD"
+      s"""
+         |[$indicator] $idx: <a href="/keyword/show_article?id=$idx" target="_blank">${article.title}</a><br/>
+         |tags: ${article.tags.mkString("; ")}<br/>
+         |keywords: ${keywords.mkString("; ")}<br/>
+         |""".stripMargin
+  }.mkString("<div>", "\n<hr/>", "</div>")
+
+  /**
+    * 抽取完全失败的文章列表
+    *
+    * @return
+    */
+  def extractFailureList: Route = (request: Request, _: Response) => {
+    allResults
   }
 
 
+  /**
+    * 显示文章内容
+    *
+    * @return
+    */
+  def showArticle: Route = (request: Request, _: Response) => {
+    Option(request.queryMap("id").value()).flatMap(_.toIntOption) match {
+      case Some(id) =>
+        val article = ArticleDataset.getArticle(id)
+        s"""
+           |<html><head><title>${article.title}</title></head>
+           |<body>
+           |  <h2>${article.title}</h2>
+           |  <h3>${article.tags.mkString("; ")}</h3>
+           |  <h3><a href="${article.url}">${article.url}</a></h3>
+           |  <div>
+           |  ${article.content.replaceAll("\n", "<br/>")}
+           |  </div>
+           |</body></html>
+           |""".stripMargin
+      case None =>
+        "未指定参数id"
+    }
+  }
+
+  /**
+    * 把指定id文章的词图，转成dot文件，方便查看。
+    *
+    * @return
+    */
+  def getWordGraph: Route = (request: Request, _: Response) => {
+    Option(request.queryMap("id").value()).flatMap(_.toIntOption) match {
+      case Some(id) =>
+        ArticleDataset.toDotFile(id, s"./www/dot/${id}.dot")
+        s"""<a href="/dot/${id}.dot">下载dot文件</a>
+           |<a href="/dot/${id}.png">下载png文件</a>
+           |""".stripMargin
+      case None =>
+        "未指定参数id"
+    }
+  }
+
+  /**
+    * 测试指定id文章的关键词抽取结果
+    *
+    * @return
+    */
   private def test: Route = (request: Request, _: Response) => {
     val topN = Option(request.queryMap("topN").value()).flatMap(_.toIntOption).getOrElse(5)
 

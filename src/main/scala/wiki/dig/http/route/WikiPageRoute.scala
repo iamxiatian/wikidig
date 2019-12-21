@@ -64,6 +64,8 @@ object WikiPageRoute extends JsonSupport with Logging {
            |  ${outlinks}
            |</body>
            |""".stripMargin
+           case None =>
+           "该词条不存在"
     }
   }
 
