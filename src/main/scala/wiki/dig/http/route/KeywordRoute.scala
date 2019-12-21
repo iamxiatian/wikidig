@@ -1,9 +1,11 @@
 package wiki.dig.http.route
 
 import io.circe.syntax._
+import org.zhinang.conf.Configuration
 import ruc.irm.extractor.keyword.TextRankExtractor
 import ruc.irm.extractor.keyword.TextRankExtractor.GraphType
 import ruc.irm.extractor.keyword.TextRankExtractor.GraphType.{PositionDivRank, PositionRank}
+import ruc.irm.extractor.nlp.SegmentFactory
 import spark.Spark._
 import spark.{Request, Response, Route}
 import wiki.dig.algorithm.keyword.ArticleDataset
@@ -68,6 +70,11 @@ object KeywordRoute extends JsonSupport with Logging {
     Option(request.queryMap("id").value()).flatMap(_.toIntOption) match {
       case Some(id) =>
         val article = ArticleDataset.getArticle(id)
+
+        //显示文本分词后的结果
+        val words = SegmentFactory.getSegment(new Configuration()).tag(article.content).asScala
+
+
         s"""
            |<html><head><title>${article.title}</title></head>
            |<body>
@@ -76,6 +83,10 @@ object KeywordRoute extends JsonSupport with Logging {
            |  <h3><a href="${article.url}">${article.url}</a></h3>
            |  <div>
            |  ${article.content.replaceAll("\n", "<br/>")}
+           |  </div>
+           |  <hr/>
+           |  <div>
+           |  ${words.map(_.toString).mkString(" ")}
            |  </div>
            |</body></html>
            |""".stripMargin
