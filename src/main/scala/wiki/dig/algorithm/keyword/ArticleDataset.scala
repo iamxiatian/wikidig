@@ -63,13 +63,16 @@ object ArticleDataset {
     g.build(article.title, 30)
     g.build(article.content, 1.0f)
 
-    val pairs: Seq[(String, String)] = g.getWordNodeMap.asScala.toSeq.flatMap {
+    val triples: Seq[(String, String, Int)] = g.getWordNodeMap.asScala.toSeq.flatMap {
       case (name, node) =>
         //转换为二元组对：（词语，词语右侧相邻的词语）
-        node.getRightNeighbors.asScala.map((name, _))
+        node.getAdjacentWords().asScala.map {
+          case (adjName, cnt) =>
+            (name, adjName, cnt)
+        }
     }
 
-    DotFile.toDotFile(pairs, dotFile)
+    DotFile.toDotFile(triples, dotFile)
   }
 }
 

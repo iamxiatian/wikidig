@@ -13,9 +13,9 @@ object DotFile extends Logging {
     * 将pair数据集，转换为dot语法，输出到dot文件中，方便可视化呈现
     * DOT语法参考Graphviz
     */
-  def toDotFile(pairs: Seq[(String, String)], dotFile: String): Unit = {
+  def toDotFile(triples: Seq[(String, String, Int)], dotFile: String): Unit = {
     //出现的所有的名称
-    val names = pairs.flatMap(pair => List(pair._1, pair._2)).toSet.toSeq
+    val names = triples.flatMap(t => List(t._1, t._2)).toSet.toSeq
 
     // 名称对应的下标作为id
     val ids: Seq[Int] = (1 to names.size)
@@ -25,17 +25,27 @@ object DotFile extends Logging {
 
     val tips: Seq[String] = ids.zip(names).map {
       case (id, name) =>
-        s"""$id [label="$name", fontname="FangSong"]"""
+        s"""$id [label="$name", fontname="FangSong"];"""
     }
 
     val nodeText = tips.mkString("\n")
-    val edgeText = pairs.map {
-      case (first, second) => s"${nameIdMapping.get(first).get} -> ${nameIdMapping.get(second).get}"
+    val edgeText = triples.map {
+      case (first, second, cnt) => s"""${nameIdMapping.get(first).get} -- ${nameIdMapping.get(second).get}[label="${cnt}"];"""
     }.mkString("\n")
+
+    //    val dotText =
+    //      s"""
+    //         |digraph g {
+    //         |  graph [ordering="out"];
+    //         |  margin=0;
+    //         |  $nodeText
+    //         |  $edgeText
+    //         |}
+    //    """.stripMargin
 
     val dotText =
       s"""
-         |digraph g {
+         |graph g {
          |  graph [ordering="out"];
          |  margin=0;
          |  $nodeText
