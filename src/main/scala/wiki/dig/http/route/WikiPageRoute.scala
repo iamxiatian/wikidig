@@ -40,7 +40,8 @@ object WikiPageRoute extends JsonSupport with Logging {
       .sortBy(_._2)(Ordering.Int.reverse)
       .map {
         case (linkName, count) =>
-          s"""<li><a href="?name=${linkName}">${linkName}</a>($count)</li>"""
+          val linkId = PageDb.getIdByName(linkName).getOrElse(0)
+          s"""<li><a href="?name=${linkName}">${linkName}</a>($count)<a href="/wiki/page_content?id=${linkId}">详情</a></li>"""
       }
       .mkString("<ul>", "\n", "</ul>")
   }
@@ -64,8 +65,8 @@ object WikiPageRoute extends JsonSupport with Logging {
            |  ${outlinks}
            |</body>
            |""".stripMargin
-           case None =>
-           "该词条不存在"
+      case None =>
+        "该词条不存在"
     }
   }
 
