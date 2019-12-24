@@ -3,6 +3,7 @@ package wiki.dig.algorithm.keyword
 import ruc.irm.extractor.keyword.graph.PositionWordGraph
 import wiki.dig.util.{DotFile, Segment}
 
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 import scala.xml.{Node, NodeSeq, XML}
 
@@ -63,6 +64,8 @@ object ArticleDataset {
     g.build(article.title, 30)
     g.build(article.content, 1.0f)
 
+    val pairSet = mutable.Set.empty[String]
+
     val triples: Seq[(String, String, Int)] = g.getWordNodeMap.asScala.toSeq.flatMap {
       case (name, node) =>
         //转换为二元组对：（词语，词语右侧相邻的词语）
@@ -72,7 +75,18 @@ object ArticleDataset {
         }
     }
 
-    DotFile.toDotFile(triples, dotFile)
+    //过滤掉重复的边
+    val triples2 = triples.filter {
+      case (first, second, cnt) =>
+        if (pairSet.contains(s"${first}_${second}") || pairSet.contains(s"${second}_${first}")) {
+          false
+        } else {
+          pairSet += s"${first}_${second}"
+          true
+        }
+    }
+
+    DotFile.toDotFile(triples2, dotFile)
   }
 }
 
