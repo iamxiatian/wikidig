@@ -66,14 +66,17 @@ object ArticleDataset {
 
     val pairSet = mutable.Set.empty[String]
 
-    val triples: Seq[(String, String, Int)] = g.getWordNodeMap.asScala.toSeq.flatMap {
-      case (name, node) =>
-        //转换为二元组对：（词语，词语右侧相邻的词语）
-        node.getAdjacentWords().asScala.map {
-          case (adjName, cnt) =>
-            (name, adjName, cnt)
-        }
-    }
+    val triples: Seq[(String, String, Int)] = g.getWordNodeMap.asScala.toSeq
+      .sortBy(_._2.getCount)(Ordering.Int.reverse)
+      .take(100)
+      .flatMap {
+        case (name, node) =>
+          //转换为二元组对：（词语，词语右侧相邻的词语）
+          node.getAdjacentWords().asScala.map {
+            case (adjName, cnt) =>
+              (name, adjName, cnt)
+          }
+      }
 
     //过滤掉重复的边
     val triples2 = triples.filter {
