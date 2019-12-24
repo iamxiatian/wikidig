@@ -7,3 +7,4 @@ target/
 projectFilesBackup/
 *.class
 *.log
+segment/
