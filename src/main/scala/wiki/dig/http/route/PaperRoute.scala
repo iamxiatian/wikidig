@@ -81,14 +81,14 @@ object PaperRoute extends JsonSupport with Logging {
 
         val tags = paper.tags
 
-        val (P1: Double, R1: Double, F1: Double) = eval(keywords1, tags)
-        val (P2: Double, R2: Double, F2: Double) = eval(keywords2, tags)
+        val (p1: Double, r1: Double, f1: Double) = eval(keywords1, tags)
+        val (p2: Double, r2: Double, f2: Double) = eval(keywords2, tags)
 
-        macroP1 += P1
-        macroR1 += R1
+        macroP1 += p1
+        macroR1 += r1
 
-        macroP2 += P2
-        macroR2 += R2
+        macroP2 += p2
+        macroR2 += r2
 
         //抽取结果中，tags至少包含一个
         val existedOne = keywords1.exists(tags.contains(_))
@@ -97,9 +97,9 @@ object PaperRoute extends JsonSupport with Logging {
            |[$indicator] $idx: <a href="/paper/show?id=$idx" target="_blank">${paper.title}</a><br/>
            |tags: ${paper.tags.mkString("; ")}<br/>
            |WeightRank: ${keywords1.mkString("; ")}<br/>
-           |P: $P1, R: $R1, F: $F1 <br/>
+           |P: $p1, R: $r1, F: $f1 <br/>
            |DivRank: ${keywords1.mkString("; ")}<br/>
-           |P: $P2, R: $R2, F: $F2 <br/>
+           |P: $p2, R: $r2, F: $f2 <br/>
            |""".stripMargin
     }.mkString("<div>", "\n<hr/>", "</div>")
 
@@ -132,7 +132,7 @@ object PaperRoute extends JsonSupport with Logging {
       resultMap(topN) = ""
       resultMap(topN) = allResults(topN)
     }
-    
+
     allResults(topN)
   }
 
