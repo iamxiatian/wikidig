@@ -13,6 +13,7 @@ import spark.{Request, Response, Route}
 import wiki.dig.algorithm.keyword.PaperDataset
 import wiki.dig.util.Logging
 
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 object PaperRoute extends JsonSupport with Logging {
@@ -36,50 +37,89 @@ object PaperRoute extends JsonSupport with Logging {
     get("/paper/list", "text/html", list)
   }
 
+  /**
+    * 评估结果，返回P, R， F
+    *
+    * @param keywords
+    * @param truth
+    * @return
+    */
+  def eval(keywords: Seq[String], truth: Seq[String]): (Double, Double, Double) = {
+    val judgedSet = mutable.Set.empty[String] //已经判断过匹配成功的记录
+    val intersection1 = keywords.count {
+      k =>
+        //考虑到短语问题，只要部分匹配，也认为命中
+        truth.exists {
+          p =>
+            val existed = (p.contains(k) || k.contains(p))
+            if (existed) {
+              //如果部分匹配，则需要记录到judgeSet中，避免重复匹配
+              if (judgedSet.contains(p)) false
+              else {
+                judgedSet += p
+                true
+              }
+            } else false
+        }
+    }
+
+    val P = intersection1 * 1.0 / keywords.length
+    val R = intersection1 * 1.0 / truth.length
+    val F = 2 * P * R / (P + R)
+    (P, R, F)
+  }
+
   lazy val allResults = (topN: Int) => {
-    var macroP = 0.0
-    var macroR = 0.0
+    var macroP1 = 0.0
+    var macroR1 = 0.0
+    var macroP2 = 0.0
+    var macroR2 = 0.0
     val detail = PaperDataset.papers.zipWithIndex.map {
       case (paper, idx) =>
-        val keywords: Seq[String] = weightedExtractor.extractAsList(paper.title, paper.`abstract`, topN).asScala.toSeq
+        val keywords1: Seq[String] = weightedExtractor.extractAsList(paper.title, paper.`abstract`, topN).asScala.toSeq
+        val keywords2: Seq[String] = weightedDivExtractor.extractAsList(paper.title, paper.`abstract`, topN).asScala.toSeq
+
         val tags = paper.tags
 
-        val intersection = keywords.count {
-          k =>
-            //考虑到短语问题，只要部分匹配，也认为命中
-            tags.exists {
-              p =>
-                (p.contains(k) || k.contains(p))
-            }
-        }
+        val (P1: Double, R1: Double, F1: Double) = eval(keywords1, tags)
+        val (P2: Double, R2: Double, F2: Double) = eval(keywords2, tags)
 
-        val P = intersection * 1.0 / keywords.length
-        val R = intersection * 1.0 / tags.length
-        val F = 2 * P * R / (P + R)
+        macroP1 += P1
+        macroR1 += R1
 
-        macroP += P
-        macroR += R
+        macroP2 += P2
+        macroR2 += R2
 
         //抽取结果中，tags至少包含一个
-        val existedOne = keywords.exists(tags.contains(_))
+        val existedOne = keywords1.exists(tags.contains(_))
         val indicator = if (existedOne) "GOOD" else "BAD"
         s"""
            |[$indicator] $idx: <a href="/paper/show?id=$idx" target="_blank">${paper.title}</a><br/>
            |tags: ${paper.tags.mkString("; ")}<br/>
-           |keywords: ${keywords.mkString("; ")}<br/>
-           |P: $P, R: $R, F: $F <br/>
+           |WeightRank: ${keywords1.mkString("; ")}<br/>
+           |P: $P1, R: $R1, F: $F1 <br/>
+           |DivRank: ${keywords1.mkString("; ")}<br/>
+           |P: $P2, R: $R2, F: $F2 <br/>
            |""".stripMargin
     }.mkString("<div>", "\n<hr/>", "</div>")
 
-    macroP = macroP / PaperDataset.count()
-    macroR = macroR / PaperDataset.count()
-    val macroF = 2 * macroP * macroR / (macroP + macroR)
+    macroP1 = macroP1 / PaperDataset.count()
+    macroR1 = macroR1 / PaperDataset.count()
+
+    macroP2 = macroP2 / PaperDataset.count()
+    macroR2 = macroR2 / PaperDataset.count()
+
+    val macroF1 = 2 * macroP1 * macroR1 / (macroP1 + macroR1)
+    val macroF2 = 2 * macroP2 * macroR2 / (macroP2 + macroR2)
 
     s"""
-       |<h3>macroP: $macroP, $macroR: $macroR, macroF: $macroF</h3>
+       |<h3>WeightRank: macroP: $macroP1, macroR: $macroR1, macroF: $macroF1</h3>
+       |<h3>DivRank: macroP: $macroP2, macroR: $macroR2, macroF: $macroF2</h3>
        |$detail
        |""".stripMargin
   }
+
+  val resultMap = mutable.Map.empty[Int, String]
 
   /**
     * 抽取完全失败的文章列表
@@ -88,7 +128,11 @@ object PaperRoute extends JsonSupport with Logging {
     */
   def list: Route = (request: Request, _: Response) => {
     val topN = Option(request.queryMap("topN").value()).flatMap(_.toIntOption).getOrElse(10)
-
+    if (!resultMap.contains(topN)) {
+      resultMap(topN) = ""
+      resultMap(topN) = allResults(topN)
+    }
+    
     allResults(topN)
   }
 
