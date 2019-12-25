@@ -46,21 +46,27 @@ object PaperRoute extends JsonSupport with Logging {
     */
   def eval(keywords: Seq[String], truth: Seq[String]): (Double, Double, Double) = {
     val judgedSet = mutable.Set.empty[String] //已经判断过匹配成功的记录
+    //    val intersection1 = keywords.count {
+    //      k =>
+    //        //考虑到短语问题，只要部分匹配，也认为命中
+    //        truth.exists {
+    //          p =>
+    //            val existed = (p.contains(k) || k.contains(p))
+    //            if (existed) {
+    //              //如果部分匹配，则需要记录到judgeSet中，避免重复匹配
+    //              if (judgedSet.contains(p)) false
+    //              else {
+    //                judgedSet += p
+    //                true
+    //              }
+    //            } else false
+    //        }
+    //    }
+
     val intersection1 = keywords.count {
       k =>
-        //考虑到短语问题，只要部分匹配，也认为命中
-        truth.exists {
-          p =>
-            val existed = (p.contains(k) || k.contains(p))
-            if (existed) {
-              //如果部分匹配，则需要记录到judgeSet中，避免重复匹配
-              if (judgedSet.contains(p)) false
-              else {
-                judgedSet += p
-                true
-              }
-            } else false
-        }
+        //完整匹配
+        truth.exists(_ == k)
     }
 
     val P = intersection1 * 1.0 / keywords.length
@@ -70,6 +76,43 @@ object PaperRoute extends JsonSupport with Logging {
   }
 
   def getResult(topN: Int): String = {
+    var macroP1 = 0.0
+    var macroR1 = 0.0
+    val detail = PaperDataset.papers.zipWithIndex.map {
+      case (paper, idx) =>
+        println(s"process $idx/${PaperDataset.count()}...")
+        val keywords1: Seq[String] = weightedExtractor.extractAsList(paper.title, paper.`abstract`, topN).asScala.toSeq
+
+        val tags = paper.tags
+
+        val (p1: Double, r1: Double, f1: Double) = eval(keywords1, tags)
+
+        macroP1 += p1
+        macroR1 += r1
+
+        //抽取结果中，tags至少包含一个
+        val existedOne = keywords1.exists(tags.contains(_))
+        val indicator = if (existedOne) "GOOD" else "BAD"
+        s"""
+           |[$indicator] $idx: <a href="/paper/show?id=$idx" target="_blank">${paper.title}</a><br/>
+           |tags: ${paper.tags.map { t => s"<a href='/wiki/page?name=$t' target='_blank'>$t</a>" }.mkString("; ")}<br/>
+           |WeightRank: ${keywords1.map { t => s"<a href='/wiki/page?name=$t' target='_blank'>$t</a>" }.mkString("; ")}<br/>
+           |P: $p1, R: $r1, F: $f1 <br/>
+           |""".stripMargin
+    }.mkString("<div>", "\n<hr/>", "</div>")
+
+    macroP1 = macroP1 / PaperDataset.count()
+    macroR1 = macroR1 / PaperDataset.count()
+
+    val macroF1 = 2 * macroP1 * macroR1 / (macroP1 + macroR1)
+
+    s"""
+       |<h3>WeightRank: macroP: $macroP1, macroR: $macroR1, macroF: $macroF1</h3>
+       |$detail
+       |""".stripMargin
+  }
+
+  def getDivRankResult(topN: Int): String = {
     var macroP1 = 0.0
     var macroR1 = 0.0
     var macroP2 = 0.0
@@ -96,10 +139,10 @@ object PaperRoute extends JsonSupport with Logging {
         val indicator = if (p1 > p2) "OLD" else "NEW"
         s"""
            |[BETTER: $indicator] $idx: <a href="/paper/show?id=$idx" target="_blank">${paper.title}</a><br/>
-           |tags: ${paper.tags.map{t => s"<a href='/wiki/page?name=$t' target='_blank'>$t</a>"}.mkString("; ")}<br/>
-           |WeightRank: ${keywords1.map{t => s"<a href='/wiki/page?name=$t' target='_blank'>$t</a>"}.mkString("; ")}<br/>
+           |tags: ${paper.tags.map { t => s"<a href='/wiki/page?name=$t' target='_blank'>$t</a>" }.mkString("; ")}<br/>
+           |WeightRank: ${keywords1.map { t => s"<a href='/wiki/page?name=$t' target='_blank'>$t</a>" }.mkString("; ")}<br/>
            |P: $p1, R: $r1, F: $f1 <br/>
-           |DivRank: ${keywords2.map{t => s"<a href='/wiki/page?name=$t' target='_blank'>$t</a>"}.mkString("; ")}<br/>
+           |DivRank: ${keywords2.map { t => s"<a href='/wiki/page?name=$t' target='_blank'>$t</a>" }.mkString("; ")}<br/>
            |P: $p2, R: $r2, F: $f2 <br/>
            |""".stripMargin
     }.mkString("<div>", "\n<hr/>", "</div>")
