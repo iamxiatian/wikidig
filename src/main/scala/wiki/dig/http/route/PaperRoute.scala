@@ -93,13 +93,13 @@ object PaperRoute extends JsonSupport with Logging {
 
         //抽取结果中，tags至少包含一个
         val existedOne = keywords1.exists(tags.contains(_))
-        val indicator = if (existedOne) "GOOD" else "BAD"
+        val indicator = if (p1 > p2) "OLD" else "NEW"
         s"""
-           |[$indicator] $idx: <a href="/paper/show?id=$idx" target="_blank">${paper.title}</a><br/>
+           |[BETTER: $indicator] $idx: <a href="/paper/show?id=$idx" target="_blank">${paper.title}</a><br/>
            |tags: ${paper.tags.mkString("; ")}<br/>
            |WeightRank: ${keywords1.mkString("; ")}<br/>
            |P: $p1, R: $r1, F: $f1 <br/>
-           |DivRank: ${keywords1.mkString("; ")}<br/>
+           |DivRank: ${keywords2.mkString("; ")}<br/>
            |P: $p2, R: $r2, F: $f2 <br/>
            |""".stripMargin
     }.mkString("<div>", "\n<hr/>", "</div>")
