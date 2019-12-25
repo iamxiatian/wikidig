@@ -69,13 +69,14 @@ object PaperRoute extends JsonSupport with Logging {
     (P, R, F)
   }
 
-  lazy val allResults = (topN: Int) => {
+  def getResult(topN: Int): String = {
     var macroP1 = 0.0
     var macroR1 = 0.0
     var macroP2 = 0.0
     var macroR2 = 0.0
     val detail = PaperDataset.papers.zipWithIndex.map {
       case (paper, idx) =>
+        println(s"process $idx/${PaperDataset.count()}...")
         val keywords1: Seq[String] = weightedExtractor.extractAsList(paper.title, paper.`abstract`, topN).asScala.toSeq
         val keywords2: Seq[String] = weightedDivExtractor.extractAsList(paper.title, paper.`abstract`, topN).asScala.toSeq
 
@@ -130,10 +131,10 @@ object PaperRoute extends JsonSupport with Logging {
     val topN = Option(request.queryMap("topN").value()).flatMap(_.toIntOption).getOrElse(10)
     if (!resultMap.contains(topN)) {
       resultMap(topN) = ""
-      resultMap(topN) = allResults(topN)
+      resultMap(topN) = getResult(topN)
     }
 
-    allResults(topN)
+    resultMap(topN)
   }
 
 
