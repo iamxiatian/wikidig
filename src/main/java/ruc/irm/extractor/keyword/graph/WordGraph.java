@@ -4,13 +4,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zhinang.conf.Configuration;
 import org.zhinang.util.ds.KeyValuePair;
-import ruc.irm.extractor.keyword.RankGraph;
 import ruc.irm.extractor.keyword.PhraseWeight;
+import ruc.irm.extractor.keyword.RankGraph;
 import ruc.irm.extractor.nlp.SegWord;
 import ruc.irm.extractor.nlp.Segment;
 import ruc.irm.extractor.nlp.SegmentFactory;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 关键词词图的基类，目前有如下实现：
@@ -103,17 +105,12 @@ public abstract class WordGraph {
         }
     }
 
-    public Set<String> getLeftNeighbors(String word) {
+    public Map<String, Integer> getLeftNeighbors(String word) {
         return wordNodeMap.get(word).getLeftNeighbors();
     }
 
-    public Set<String> getRightNeighbors(String word) {
-        if (wordNodeMap.get(word).getPos().equals("nr")) {
-            //相当于不合并人名后面的词语
-            return new HashSet<>();
-        } else {
-            return wordNodeMap.get(word).getRightNeighbors();
-        }
+    public Map<String, Integer> getRightNeighbors(String word) {
+        return wordNodeMap.get(word).getRightNeighbors();
     }
 
     public void build(String text, float importance) {

@@ -39,7 +39,7 @@ object DotFile extends Logging {
 
     val nodeText = tips.mkString("\n")
     val edgeText = triples.map {
-      case (first, second, cnt) => s"""${nameIdMapping.get(first).get} -- ${nameIdMapping.get(second).get}[label="${cnt}"];"""
+      case (first, second, cnt) => s"""${nameIdMapping.get(first).get} -> ${nameIdMapping.get(second).get}[label="${cnt}"];"""
     }.mkString("\n")
 
     //    val dotText =
@@ -54,7 +54,7 @@ object DotFile extends Logging {
 
     val dotText =
       s"""
-         |graph g {
+         |digraph g {
          |  graph [ordering="out"];
          |  margin=0;
          |  $nodeText

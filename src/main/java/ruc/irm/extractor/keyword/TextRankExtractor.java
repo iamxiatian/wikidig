@@ -123,59 +123,58 @@ public class TextRankExtractor implements KeywordExtractor {
                 }
             }
 
-            if (!mergeNeighbor) {
-                return keywords;
-            }
+            return keywords;
 
-            //对抽取出的关键词，合并相邻出现的词语, 如玉米、价格、指数，合并为玉米价格指数
-            List<String> filteredResult = new ArrayList<>();
-            boolean changed = false;
-            count = 0;
-            while (keywords.size()>0){
-                String word = keywords.remove(0);
-                String merged = merge(word, wordGraph, keywords);
-                filteredResult.add(merged);
-                if ((++count) == topN) {
-                    break;
-                }
-            }
-
-            return filteredResult;
+//            if (!mergeNeighbor) {
+//                return keywords;
+//            }
+//
+//            //对抽取出的关键词，合并相邻出现的词语, 如玉米、价格、指数，合并为玉米价格指数
+//            List<String> filteredResult = new ArrayList<>();
+//            boolean changed = false;
+//            count = 0;
+//            while (keywords.size()>0){
+//                String word = keywords.remove(0);
+//                String merged = merge(word, wordGraph, keywords);
+//                filteredResult.add(merged);
+//                if ((++count) == topN) {
+//                    break;
+//                }
+//            }
+//
+//            return filteredResult;
         }
     }
 
     /**
      * 合并词语current相邻的词语
      *
-     * @param current
-     * @param graph
-     * @param candidates
      * @return
      */
-    private String merge(String current, WordGraph graph, List<String> candidates) {
-        Set<String> rights = graph.getRightNeighbors(current);
-        Set<String> lefts = graph.getLeftNeighbors(current);
-
-        String mergedText = current;
-        Set<String> mergedItems = new HashSet<>();
-        for (String word : candidates) {
-            if (rights.contains(word)) {
-                mergedText = mergedText + word;
-                rights = graph.getRightNeighbors(word); //该边右邻集合，不断向右合并
-                mergedItems.add(word);
-            } else if (lefts.contains(word)) {
-                mergedText = word + mergedText;
-                lefts = graph.getLeftNeighbors(word); //该边左邻集合，不断向左合并
-                mergedItems.add(word);
-            }
-        }
-
-        //删除已经合并掉的词语
-        if (mergedItems.size() > 0) {
-            candidates.removeAll(mergedItems);
-        }
-        return mergedText;
-    }
+//    private String merge(String current, WordGraph graph, List<String> candidates) {
+//        Set<String> rights = graph.getRightNeighbors(current);
+//        Set<String> lefts = graph.getLeftNeighbors(current);
+//
+//        String mergedText = current;
+//        Set<String> mergedItems = new HashSet<>();
+//        for (String word : candidates) {
+//            if (rights.contains(word)) {
+//                mergedText = mergedText + word;
+//                rights = graph.getRightNeighbors(word); //该边右邻集合，不断向右合并
+//                mergedItems.add(word);
+//            } else if (lefts.contains(word)) {
+//                mergedText = word + mergedText;
+//                lefts = graph.getLeftNeighbors(word); //该边左邻集合，不断向左合并
+//                mergedItems.add(word);
+//            }
+//        }
+//
+//        //删除已经合并掉的词语
+//        if (mergedItems.size() > 0) {
+//            candidates.removeAll(mergedItems);
+//        }
+//        return mergedText;
+//    }
 
     private static void loadBiGram(String uri) throws IOException {
         neighbors = Maps.newConcurrentMap();

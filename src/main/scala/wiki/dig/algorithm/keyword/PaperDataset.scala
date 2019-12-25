@@ -47,24 +47,20 @@ object PaperDataset {
       .flatMap {
         case (name, node) =>
           //转换为二元组对：（词语，词语右侧相邻的词语）
-          node.getAdjacentWords().asScala.map {
+          val pairs1: Seq[(String, String, Int)] = node.getLeftNeighbors.asScala.map {
             case (adjName, cnt) =>
-              (name, adjName, cnt)
-          }
+              (adjName, name, cnt.toInt)
+          }.toSeq
+
+          val pairs2: Seq[(String, String, Int)] = node.getRightNeighbors.asScala.map {
+            case (adjName, cnt) =>
+              (name, adjName, cnt.toInt)
+          }.toSeq
+
+          pairs1 ++: pairs2
       }
 
-    //过滤掉重复的边
-    val triples2 = triples.filter {
-      case (first, second, cnt) =>
-        if (pairSet.contains(s"${first}_${second}") || pairSet.contains(s"${second}_${first}")) {
-          false
-        } else {
-          pairSet += s"${first}_${second}"
-          true
-        }
-    }
-
-    DotFile.toDotFile(triples2, dotFile)
+    DotFile.toDotFile(triples, dotFile)
   }
 }
 

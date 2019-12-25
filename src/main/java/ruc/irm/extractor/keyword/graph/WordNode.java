@@ -1,9 +1,7 @@
 package ruc.irm.extractor.keyword.graph;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * 一个词语，包含文本在句子中
@@ -12,18 +10,23 @@ import java.util.Set;
  */
 public class WordNode {
 
-    public Set<String> getRightNeighbors() {
+    public Map<String, Integer> getRightNeighbors() {
         return rightNeighbors;
     }
 
-    public Set<String> getLeftNeighbors() {
+    public Map<String, Integer> getLeftNeighbors() {
         return leftNeighbors;
     }
 
-    /**该节点后面相邻的词语集合 */
-    private Set<String> rightNeighbors = new HashSet<>();
-    /** 该节点前面相邻的节点集合*/
-    private Set<String> leftNeighbors = new HashSet<>();
+    /**
+     * 该节点后面相邻的词语集合
+     */
+    private Map<String, Integer> rightNeighbors = new HashMap<>();
+
+    /**
+     * 该节点前面相邻的节点集合
+     */
+    private Map<String, Integer> leftNeighbors = new HashMap<>();
 
     /**
      * 词语的名称
@@ -110,11 +113,11 @@ public class WordNode {
     }
 
     public void addLeftNeighbor(String word) {
-        leftNeighbors.add(word);
+        leftNeighbors.put(word, leftNeighbors.getOrDefault(word, 0) + 1);
     }
 
     public void addRightNeighbor(String word) {
-        rightNeighbors.add(word);
+        rightNeighbors.put(word, rightNeighbors.getOrDefault(word, 0) + 1);
     }
 
     @Override
