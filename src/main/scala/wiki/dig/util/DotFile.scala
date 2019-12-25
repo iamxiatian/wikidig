@@ -3,6 +3,7 @@ package wiki.dig.util
 import better.files.File
 import wiki.dig.algorithm.keyword.ArticleDataset
 
+import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -20,12 +21,20 @@ object DotFile extends Logging {
     // 名称对应的下标作为id
     val ids: Seq[Int] = (1 to names.size)
 
+    //每个名称的度（如果指定了边的权重，则累加权重）,主键为名称，值为度
+    val nameWeights: mutable.Map[String, Int] = mutable.Map.empty[String, Int]
+    triples.map {
+      case (from, to, cnt) =>
+        nameWeights(from) = nameWeights.getOrElse(from, 0) + cnt
+        nameWeights(to) = nameWeights.getOrElse(to, 0) + cnt
+    }
+
     //名称和下标的映射
     val nameIdMapping: Map[String, Int] = names.zip(ids).toMap
 
     val tips: Seq[String] = ids.zip(names).map {
       case (id, name) =>
-        s"""$id [label="$name", fontname="FangSong"];"""
+        s"""$id [label="${name}/${nameWeights.getOrElse(name, 0)}", fontname="FangSong"];"""
     }
 
     val nodeText = tips.mkString("\n")
@@ -58,7 +67,7 @@ object DotFile extends Logging {
 
     f.writeText(dotText)
     Try {
-      Runtime.getRuntime.exec(s"dot -Tpng ${dotFile} -o ${dotFile.replace(".dot", ".png")}")
+      Runtime.getRuntime.exec(s"sfdp -Tpng ${dotFile} -o ${dotFile.replace(".dot", ".png")}")
     } match {
       case Success(_) =>
 
