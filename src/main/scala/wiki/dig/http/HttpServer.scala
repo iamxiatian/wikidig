@@ -3,7 +3,7 @@ package wiki.dig.http
 import spark.Spark.{port, staticFiles, _}
 import spark.{Request, Response}
 import wiki.dig.MyConf
-import wiki.dig.http.route.{JsonSupport, KeywordRoute, WikiPageRoute}
+import wiki.dig.http.route.{JsonSupport, KeywordRoute, PaperRoute, WikiPageRoute}
 import wiki.dig.util.{Logging, Segment}
 
 /**
@@ -11,13 +11,14 @@ import wiki.dig.util.{Logging, Segment}
   */
 object HttpServer extends App with Logging {
   Segment.init()
-  
+
   port(MyConf.webPort)
   staticFiles.externalLocation(MyConf.webRoot)
 
   // 注册路由
   WikiPageRoute.register()
   KeywordRoute.register()
+  PaperRoute.register()
 
   before((request, response) => {
     def foo(request: Request, response: Response): Unit = new JsonSupport {
