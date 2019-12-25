@@ -1,5 +1,7 @@
 package wiki.dig.http.route
 
+import java.io.File
+
 import io.circe.syntax._
 import org.zhinang.conf.Configuration
 import ruc.irm.extractor.keyword.TextRankExtractor
@@ -34,20 +36,50 @@ object PaperRoute extends JsonSupport with Logging {
     get("/paper/list", "text/html", list)
   }
 
-  lazy val allResults = PaperDataset.papers.zipWithIndex.map {
-    case (paper, idx) =>
-      val keywords: Seq[String] = weightedExtractor.extractAsList(paper.title, paper.`abstract`, 10).asScala.toSeq
-      val tags = paper.tags
+  lazy val allResults = (topN: Int) => {
+    var macroP = 0.0
+    var macroR = 0.0
+    val detail = PaperDataset.papers.zipWithIndex.map {
+      case (paper, idx) =>
+        val keywords: Seq[String] = weightedExtractor.extractAsList(paper.title, paper.`abstract`, topN).asScala.toSeq
+        val tags = paper.tags
 
-      //抽取结果中，tags至少包含一个
-      val existedOne = keywords.exists(tags.contains(_))
-      val indicator = if (existedOne) "GOOD" else "BAD"
-      s"""
-         |[$indicator] $idx: <a href="/paper/show?id=$idx" target="_blank">${paper.title}</a><br/>
-         |tags: ${paper.tags.mkString("; ")}<br/>
-         |keywords: ${keywords.mkString("; ")}<br/>
-         |""".stripMargin
-  }.mkString("<div>", "\n<hr/>", "</div>")
+        val intersection = keywords.count {
+          k =>
+            //考虑到短语问题，只要部分匹配，也认为命中
+            tags.exists {
+              p =>
+                (p.contains(k) || k.contains(p))
+            }
+        }
+
+        val P = intersection * 1.0 / keywords.length
+        val R = intersection * 1.0 / tags.length
+        val F = 2 * P * R / (P + R)
+
+        macroP += P
+        macroR += R
+
+        //抽取结果中，tags至少包含一个
+        val existedOne = keywords.exists(tags.contains(_))
+        val indicator = if (existedOne) "GOOD" else "BAD"
+        s"""
+           |[$indicator] $idx: <a href="/paper/show?id=$idx" target="_blank">${paper.title}</a><br/>
+           |tags: ${paper.tags.mkString("; ")}<br/>
+           |keywords: ${keywords.mkString("; ")}<br/>
+           |P: $P, R: $R, F: $F <br/>
+           |""".stripMargin
+    }.mkString("<div>", "\n<hr/>", "</div>")
+
+    macroP = macroP / PaperDataset.count()
+    macroR = macroR / PaperDataset.count()
+    val macroF = 2 * macroP * macroR / (macroP + macroR)
+
+    s"""
+       |<h3>macroP: $macroP, $macroR: $macroR, macroF: $macroF</h3>
+       |$detail
+       |""".stripMargin
+  }
 
   /**
     * 抽取完全失败的文章列表
@@ -55,7 +87,9 @@ object PaperRoute extends JsonSupport with Logging {
     * @return
     */
   def list: Route = (request: Request, _: Response) => {
-    allResults
+    val topN = Option(request.queryMap("topN").value()).flatMap(_.toIntOption).getOrElse(10)
+
+    allResults(topN)
   }
 
 
@@ -78,6 +112,10 @@ object PaperRoute extends JsonSupport with Logging {
 
         val contentWords = SegmentFactory.getSegment(new Configuration()).tag(paper.`abstract`).asScala
 
+        if (!new File(s"./www/dot2/${id}.png").exists()) {
+          PaperDataset.toDotFile(id.toInt, s"./www/dot2/${id}.png")
+        }
+
         s"""
            |<html><head><title>${paper.title}</title></head>
            |<body>
@@ -95,6 +133,9 @@ object PaperRoute extends JsonSupport with Logging {
            |  <hr/>
            |  <div>
            |  ${contentWords.map(_.toString).mkString(" ")}
+           |  </div>
+           |  <div>
+           |    <img src="/dot2/${id}.png"/>
            |  </div>
            |</body></html>
            |""".stripMargin
