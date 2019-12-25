@@ -96,10 +96,10 @@ object PaperRoute extends JsonSupport with Logging {
         val indicator = if (p1 > p2) "OLD" else "NEW"
         s"""
            |[BETTER: $indicator] $idx: <a href="/paper/show?id=$idx" target="_blank">${paper.title}</a><br/>
-           |tags: ${paper.tags.mkString("; ")}<br/>
-           |WeightRank: ${keywords1.mkString("; ")}<br/>
+           |tags: ${paper.tags.map{t => s"<a href='/wiki/page?name=$t' target='_blank'>$t</a>"}.mkString("; ")}<br/>
+           |WeightRank: ${keywords1.map{t => s"<a href='/wiki/page?name=$t' target='_blank'>$t</a>"}.mkString("; ")}<br/>
            |P: $p1, R: $r1, F: $f1 <br/>
-           |DivRank: ${keywords2.mkString("; ")}<br/>
+           |DivRank: ${keywords2.map{t => s"<a href='/wiki/page?name=$t' target='_blank'>$t</a>"}.mkString("; ")}<br/>
            |P: $p2, R: $r2, F: $f2 <br/>
            |""".stripMargin
     }.mkString("<div>", "\n<hr/>", "</div>")
