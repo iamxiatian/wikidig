@@ -65,9 +65,13 @@ object PaperRoute extends JsonSupport with Logging {
     * @return
     */
   def show: Route = (request: Request, _: Response) => {
+    val topN = Option(request.queryMap("topN").value()).flatMap(_.toIntOption).getOrElse(5)
+
     Option(request.queryMap("id").value()).flatMap(_.toIntOption) match {
       case Some(id) =>
         val paper = PaperDataset.get(id)
+        val keywords1 = weightedExtractor.extractAsString(paper.title, paper.`abstract`, topN)
+        val keywords2 = weightedDivExtractor.extractAsString(paper.title, paper.`abstract`, topN)
 
         //显示文本分词后的结果
         val words = SegmentFactory.getSegment(new Configuration()).tag(paper.`abstract`).asScala
@@ -77,7 +81,11 @@ object PaperRoute extends JsonSupport with Logging {
            |<html><head><title>${paper.title}</title></head>
            |<body>
            |  <h2>${paper.title}</h2>
-           |  <h3>${paper.tags.mkString("; ")}</h3>
+           |  <ul>
+           |  <li>tags: ${paper.tags.mkString("; ")}</li>
+           |  <li>WeightRank: ${keywords1}</li>
+           |  <li>DivRank: ${keywords2}</li>
+           |  </ul>
            |  <div>
            |  ${paper.`abstract`.replaceAll("\n", "<br/>")}
            |  </div>
