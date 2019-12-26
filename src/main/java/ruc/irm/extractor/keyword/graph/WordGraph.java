@@ -169,16 +169,18 @@ public abstract class WordGraph {
                     }
 
                     if (lastPosition == i - 1) {
-                        wordNode.addLeftNeighbor(lastWordNode.getName());
-                        lastWordNode.addRightNeighbor(wordNode.getName());
+//                        wordNode.addLeftNeighbor(lastWordNode.getName());
+//                        lastWordNode.addRightNeighbor(wordNode.getName());
 //                        if (wordNode.getPos().startsWith("n") &&
 //                                (lastWordNode.getPos().equals("adj") ||
 //                                        lastWordNode.getPos().startsWith("n") ||
 //                                        lastWordNode.getPos().endsWith("n")
-//                                )) {
-//                            wordNode.addLeftNeighbor(lastWordNode.getName());
-//                            lastWordNode.addRightNeighbor(wordNode.getName());
-//                        }
+//                                )
+//                        ) {
+                        if (wordNode.getPos().startsWith("n") || wordNode.getPos().endsWith("n")) {
+                            wordNode.addLeftNeighbor(lastWordNode.getName());
+                            lastWordNode.addRightNeighbor(wordNode.getName());
+                        }
                     }
                 }
                 lastPosition = i;
