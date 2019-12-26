@@ -1,5 +1,6 @@
 package wiki.dig.http
 
+import better.files.File
 import spark.Spark.{port, staticFiles, _}
 import spark.{Request, Response}
 import wiki.dig.MyConf
@@ -13,7 +14,9 @@ object HttpServer extends App with Logging {
   Segment.init()
 
   port(MyConf.webPort)
-  staticFiles.externalLocation(MyConf.webRoot)
+  staticFiles.externalLocation(File(MyConf.webRoot).canonicalPath)
+
+  println(s"web root: ${File(MyConf.webRoot).canonicalPath}")
 
   // 注册路由
   WikiPageRoute.register()

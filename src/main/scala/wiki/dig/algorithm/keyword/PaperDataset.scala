@@ -41,26 +41,56 @@ object PaperDataset {
 
     val pairSet = mutable.Set.empty[String]
 
-    val triples: Seq[(String, String, Int)] = g.getWordNodeMap.asScala.toSeq
+    val edges: Seq[DotFile.Edge] = g.getWordNodeMap.asScala.toSeq
       .sortBy(_._2.getCount)(Ordering.Int.reverse)
-      .take(100)
+      //.take(100)
       .flatMap {
         case (name, node) =>
           //转换为二元组对：（词语，词语右侧相邻的词语）
-          val pairs1: Seq[(String, String, Int)] = node.getLeftNeighbors.asScala.map {
+          val pairs1: Seq[DotFile.Edge] = node.getLeftNeighbors.asScala.map {
             case (adjName, cnt) =>
-              (adjName, name, cnt.toInt)
+              DotFile.Edge(adjName, name, cnt.toInt, 1)
           }.toSeq
 
-          val pairs2: Seq[(String, String, Int)] = node.getRightNeighbors.asScala.map {
-            case (adjName, cnt) =>
-              (name, adjName, cnt.toInt)
-          }.toSeq
-
-          pairs1 ++: pairs2
+          //          val pairs2: Seq[(String, String, Int)] = node.getRightNeighbors.asScala.map {
+          //            case (adjName, cnt) =>
+          //              (name, adjName, cnt.toInt)
+          //          }.toSeq
+          //
+          //          pairs1 ++: pairs2
+          pairs1
       }
 
-    DotFile.toDotFile(triples, dotFile)
+    //记录已经存在的边，避免把近邻边重复加入到图中
+    val existedEdges = mutable.Set.empty[String]
+    edges.foreach { edge =>
+      existedEdges += s"${edge.src}-${edge.dest}"
+      existedEdges += s"${edge.dest}-${edge.src}"
+    }
+
+    val edges2: Seq[DotFile.Edge] = g.getWordNodeMap.asScala.toSeq
+      .sortBy(_._2.getCount)(Ordering.Int.reverse)
+      //.take(100)
+      .flatMap {
+        case (name, node) =>
+          //转换为二元组对：（词语，词语右侧相邻的词语）
+          node.getAdjacentWords.asScala.map {
+            case (adjName, cnt) =>
+              DotFile.Edge(adjName, name, cnt.toInt, 2)
+          }.toSeq
+      }
+      .filter { edge =>
+        //过滤掉已经存在的边
+        if (existedEdges.contains(s"${edge.src}-${edge.dest}")) {
+          false
+        } else {
+          existedEdges += s"${edge.src}-${edge.dest}"
+          existedEdges += s"${edge.dest}-${edge.src}"
+          true
+        }
+      }
+
+    DotFile.save(edges ++: edges2, dotFile)
   }
 }
 

@@ -193,7 +193,7 @@ object PaperRoute extends JsonSupport with Logging {
       case Some(id) =>
         val paper = PaperDataset.get(id)
         val keywords1 = weightedExtractor.extractAsString(paper.title, paper.`abstract`, topN)
-        val keywords2 = weightedDivExtractor.extractAsString(paper.title, paper.`abstract`, topN)
+        //val keywords2 = weightedDivExtractor.extractAsString(paper.title, paper.`abstract`, topN)
 
         //显示文本分词后的结果
         val titleWords = SegmentFactory.getSegment(new Configuration()).tag(paper.title).asScala
@@ -212,7 +212,6 @@ object PaperRoute extends JsonSupport with Logging {
            |  <li>segment: ${titleWords.map(_.toString).mkString(" ")}</li>
            |  <li>tags: ${paper.tags.mkString("; ")}</li>
            |  <li>WeightRank: ${keywords1}</li>
-           |  <li>DivRank: ${keywords2}</li>
            |  <li><a href="graph?id=${id}">查看词图</a></li>
            |  </ul>
            |  <div>

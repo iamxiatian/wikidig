@@ -124,7 +124,7 @@ public abstract class WordGraph {
                 continue;
             }
 
-            if (segWord.word.length() >= 2 && (segWord.pos.startsWith("n") || segWord.pos.startsWith("adj") || segWord.pos.startsWith("v"))) {
+            if (segWord.word.length() >= 2 && (segWord.pos.startsWith("n") || segWord.pos.endsWith("n") || segWord.pos.startsWith("adj") || segWord.pos.startsWith("v"))) {
                 WordNode wordNode = wordNodeMap.get(segWord.word);
 
                 //如果已经读取了最大允许的单词数量，则忽略后续的内容
@@ -145,7 +145,7 @@ public abstract class WordGraph {
                         specifiedWeight = importance;
                     }
 
-                    if (segWord.pos.equals("ns") || segWord.equals("nr")) {
+                    if (segWord.pos.equals("ns") || segWord.equals("nr") || segWord.equals("nz")) {
                         specifiedWeight = specifiedWeight * 1.3f;
                     } else if (segWord.pos.startsWith("v")) {
                         specifiedWeight *= 0.5f;
@@ -169,11 +169,16 @@ public abstract class WordGraph {
                     }
 
                     if (lastPosition == i - 1) {
-                        if (wordNode.getPos().startsWith("n") &&
-                                (lastWordNode.getPos().equals("adj") || lastWordNode.getPos().startsWith("n"))) {
-                            wordNode.addLeftNeighbor(lastWordNode.getName());
-                            lastWordNode.addRightNeighbor(wordNode.getName());
-                        }
+                        wordNode.addLeftNeighbor(lastWordNode.getName());
+                        lastWordNode.addRightNeighbor(wordNode.getName());
+//                        if (wordNode.getPos().startsWith("n") &&
+//                                (lastWordNode.getPos().equals("adj") ||
+//                                        lastWordNode.getPos().startsWith("n") ||
+//                                        lastWordNode.getPos().endsWith("n")
+//                                )) {
+//                            wordNode.addLeftNeighbor(lastWordNode.getName());
+//                            lastWordNode.addRightNeighbor(wordNode.getName());
+//                        }
                     }
                 }
                 lastPosition = i;
