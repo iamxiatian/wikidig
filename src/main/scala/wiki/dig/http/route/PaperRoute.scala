@@ -34,7 +34,9 @@ object PaperRoute extends JsonSupport with Logging {
 
     get("/paper/show", "text/html", show)
 
-    get("/paper/list", "text/html", list)
+    get("/paper/list_keywords", "text/html", listKeywords)
+    
+    get("/paper/list_phrases", "text/html", listPhrases)
   }
 
   /**
@@ -75,13 +77,16 @@ object PaperRoute extends JsonSupport with Logging {
     (P, R, F)
   }
 
-  def getResult(topN: Int): String = {
+  def getResult(topN: Int, findPhrase: Boolean): String = {
     var macroP1 = 0.0
     var macroR1 = 0.0
     val detail = PaperDataset.papers.zipWithIndex.map {
       case (paper, idx) =>
         println(s"process $idx/${PaperDataset.count()}...")
-        val keywords1: Seq[String] = weightedExtractor.extractAsList(paper.title, paper.`abstract`, topN).asScala.toSeq
+        val keywords1: Seq[String] = if (findPhrase)
+          weightedExtractor.extractPhraseAsList(paper.title, paper.`abstract`, topN).asScala.toSeq
+        else
+          weightedExtractor.extractAsList(paper.title, paper.`abstract`, topN).asScala.toSeq
 
         val tags = paper.tags
 
@@ -170,16 +175,28 @@ object PaperRoute extends JsonSupport with Logging {
     *
     * @return
     */
-  def list: Route = (request: Request, _: Response) => {
+  def listKeywords: Route = (request: Request, _: Response) => {
     val topN = Option(request.queryMap("topN").value()).flatMap(_.toIntOption).getOrElse(10)
     if (!resultMap.contains(topN)) {
       resultMap(topN) = ""
-      resultMap(topN) = getResult(topN)
+      resultMap(topN) = getResult(topN, false)
     }
 
     resultMap(topN)
   }
 
+
+  val phraseMap = mutable.Map.empty[Int, String]
+
+  def listPhrases: Route = (request: Request, _: Response) => {
+    val topN = Option(request.queryMap("topN").value()).flatMap(_.toIntOption).getOrElse(10)
+    if (!phraseMap.contains(topN)) {
+      phraseMap(topN) = ""
+      phraseMap(topN) = getResult(topN, true)
+    }
+
+    phraseMap(topN)
+  }
 
   /**
     * 显示文章内容

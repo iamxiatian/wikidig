@@ -48,6 +48,17 @@ public class WordNode {
      */
     private double importance = 1;
 
+    public double getScore() {
+        return score;
+    }
+
+    public void setScore(double score) {
+        this.score = score;
+    }
+
+    /** 作为关键词的得分，越大越有可能为关键词 */
+    private double score = 0;
+
     /**
      * 当前节点所指向的节点名称及其出现次数
      */
@@ -129,4 +140,5 @@ public class WordNode {
                 ", importance=" + importance +
                 '}';
     }
+
 }

@@ -38,8 +38,12 @@ object PaperDataset {
     val g = new PositionWordGraph(1, 0, 0, true)
     g.build(paper.title, 30)
     g.build(paper.`abstract`, 1.0f)
+    g.findTopKeywords(5)
 
-    val pairSet = mutable.Set.empty[String]
+    def score(name: String) = {
+      val s = g.getWordNode(name).getScore.formatted("%.3f")
+      s"$name($s)"
+    }
 
     val edges: Seq[DotFile.Edge] = g.getWordNodeMap.asScala.toSeq
       .sortBy(_._2.getCount)(Ordering.Int.reverse)
@@ -49,7 +53,7 @@ object PaperDataset {
           //转换为二元组对：（词语，词语右侧相邻的词语）
           val pairs1: Seq[DotFile.Edge] = node.getLeftNeighbors.asScala.map {
             case (adjName, cnt) =>
-              DotFile.Edge(adjName, name, cnt.toInt, 1)
+              DotFile.Edge(score(adjName), score(name), cnt.toInt, 1)
           }.toSeq
 
           //          val pairs2: Seq[(String, String, Int)] = node.getRightNeighbors.asScala.map {
@@ -76,7 +80,7 @@ object PaperDataset {
           //转换为二元组对：（词语，词语右侧相邻的词语）
           node.getAdjacentWords.asScala.map {
             case (adjName, cnt) =>
-              DotFile.Edge(adjName, name, cnt.toInt, 2)
+              DotFile.Edge(score(adjName), score(name), cnt.toInt, 2)
           }.toSeq
       }
       .filter { edge =>

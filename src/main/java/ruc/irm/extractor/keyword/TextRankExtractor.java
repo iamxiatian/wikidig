@@ -7,21 +7,24 @@ import com.hankcs.hanlp.HanLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zhinang.conf.Configuration;
-import ruc.irm.extractor.commons.ChineseStopKeywords;
 import ruc.irm.extractor.commons.ExtractConf;
 import ruc.irm.extractor.keyword.divrank.PositionWordDivGraph;
-import ruc.irm.extractor.keyword.graph.*;
+import ruc.irm.extractor.keyword.graph.EmbeddingWordGraph;
+import ruc.irm.extractor.keyword.graph.PositionWordGraph;
+import ruc.irm.extractor.keyword.graph.WordGraph;
 import ruc.irm.extractor.nlp.SegmentFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Automatic keyword extractor interface.
  *
- * @ChangeLog:
- * 2016/04/29: 合并一起出现的关键词抽取结果，例如玉米、价格、指数，合并为一个玉米价格指数
- *
+ * @ChangeLog: 2016/04/29: 合并一起出现的关键词抽取结果，例如玉米、价格、指数，合并为一个玉米价格指数
+ * <p>
  * User: xiatian
  * Date: 3/31/13 6:15 PM
  */
@@ -83,47 +86,47 @@ public class TextRankExtractor implements KeywordExtractor {
     }
 
     public List<String> extractAsList(String title, String content, int topN) {
-        List<String> keywords = new LinkedList<>();
+        //use improved text rank method proposed by xiatian
+        WordGraph wordGraph = null;
 
-        if (useHanlpMethod) {
-            LOG.debug("use HanLP provided keyword extractor.");
-            //use hanlp provided keyword extractor
-            return HanLP.extractKeyword(content, topN);
+        if (graphType == GraphType.TextRank) {
+            wordGraph = new PositionWordGraph(1, 0, 0, true);
+        } else if (graphType == GraphType.PositionRank) {
+            wordGraph = new PositionWordGraph(0.33f, 0.34f, 0.33f, true);
+        } else if (graphType == GraphType.NingJianfei) {
+            wordGraph = new EmbeddingWordGraph(alpha, beta, gamma, true);
+        } else if (graphType == GraphType.PositionDivRank) {
+            wordGraph = new PositionWordDivGraph(0.33f, 0.34f, 0.33f, true);
         } else {
-            //use improved text rank method proposed by xiatian
-            WordGraph wordGraph = null;
+            wordGraph = new PositionWordGraph(0.33f, 0.34f, 0.33f, true);
+        }
+        wordGraph.build(title, lambda);
+        wordGraph.build(content, 1.0f);
+//
+//            RankGraph g = wordGraph.makeRankGraph();
+//            g.iterateCalculation(20, 0.85f);
+//            g.quickSort();
+//
+//            //把计算得分保存到词图中
+//            for (int i = 0; i < g.labels.length; i++) {
+//                String word = g.labels[i];
+//                wordGraph.getWordNode(word).setScore(g.V[i]);
+//            }
+//
+//            int count = 0;
+//            int limit = topN;
+//            if (mergeNeighbor) {
+//                limit += 10; //多挑选10个候选关键词，以尽可能使合并后的关键词数量也能够取到topN个
+//            }
+//            for (int i = 0; i < g.labels.length && count < limit; i++) {
+//                String word = g.labels[i];
+//                if (!ChineseStopKeywords.isStopKeyword(word)) {
+//                    keywords.add(word);
+//                    count++;
+//                }
+//            }
 
-            if(graphType == GraphType.TextRank) {
-                wordGraph = new PositionWordGraph(1, 0, 0, true);
-            } else if(graphType == GraphType.PositionRank) {
-                wordGraph = new PositionWordGraph(0.33f, 0.34f, 0.33f, true);
-            } else if(graphType == GraphType.NingJianfei){
-                wordGraph = new EmbeddingWordGraph(alpha, beta, gamma, true);
-            }  else if(graphType == GraphType.PositionDivRank){
-                wordGraph = new PositionWordDivGraph(0.33f, 0.34f, 0.33f, true);
-            } else {
-                wordGraph = new PositionWordGraph(0.33f, 0.34f, 0.33f, true);
-            }
-            wordGraph.build(title, lambda);
-            wordGraph.build(content, 1.0f);
-
-            RankGraph g = wordGraph.makeRankGraph();
-            g.iterateCalculation(20, 0.85f);
-            g.quickSort();
-            int count = 0;
-            int limit = topN;
-            if (mergeNeighbor) {
-                limit += 10; //多挑选10个候选关键词，以尽可能使合并后的关键词数量也能够取到topN个
-            }
-            for (int i = 0; i < g.labels.length && count < limit; i++) {
-                String word = g.labels[i];
-                if(!ChineseStopKeywords.isStopKeyword(word)) {
-                    keywords.add(word);
-                    count++;
-                }
-            }
-
-            return keywords;
+        return wordGraph.findTopKeywords(topN, false);
 
 //            if (!mergeNeighbor) {
 //                return keywords;
@@ -143,7 +146,27 @@ public class TextRankExtractor implements KeywordExtractor {
 //            }
 //
 //            return filteredResult;
+    }
+
+    public List<String> extractPhraseAsList(String title, String content, int topN) {
+        //use improved text rank method proposed by xiatian
+        WordGraph wordGraph = null;
+
+        if (graphType == GraphType.TextRank) {
+            wordGraph = new PositionWordGraph(1, 0, 0, true);
+        } else if (graphType == GraphType.PositionRank) {
+            wordGraph = new PositionWordGraph(0.33f, 0.34f, 0.33f, true);
+        } else if (graphType == GraphType.NingJianfei) {
+            wordGraph = new EmbeddingWordGraph(alpha, beta, gamma, true);
+        } else if (graphType == GraphType.PositionDivRank) {
+            wordGraph = new PositionWordDivGraph(0.33f, 0.34f, 0.33f, true);
+        } else {
+            wordGraph = new PositionWordGraph(0.33f, 0.34f, 0.33f, true);
         }
+        wordGraph.build(title, lambda);
+        wordGraph.build(content, 1.0f);
+
+        return wordGraph.findTopKeywords(topN, true);
     }
 
     /**
@@ -175,7 +198,6 @@ public class TextRankExtractor implements KeywordExtractor {
 //        }
 //        return mergedText;
 //    }
-
     private static void loadBiGram(String uri) throws IOException {
         neighbors = Maps.newConcurrentMap();
         List<String> lines = Resources.readLines(Resources.getResource(uri), Charsets.UTF_8);
